@@ -1,0 +1,5 @@
+#%Module1.0
+module-whatis "Euclidean Alignment Python module"
+prepend-path PATH /mnt/beegfs/home/chevallier/miniconda3/envs/eu_al_eeg/bin/python
+setenv PYTHONPATH /mnt/beegfs/home/chevallier/miniconda3/envs/eu_al_eeg/lib/python3.9/site-packages
+

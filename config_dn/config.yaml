@@ -1,0 +1,17 @@
+seed: 2342
+train:
+    num_workers: 10
+    run_report: '/workspace/outputs'
+    n_epochs: 1000
+    patience: 200
+    weight_decay: 0.03
+    batch_size: 64
+    lr: 5e-4
+    valid_split: 0.2
+    experiment_name: 'full_trial'
+model:
+    drop_prob: 0.5
+    final_conv_length: 'auto'
+
+dataset:
+    path: "/workspace/datasets/"

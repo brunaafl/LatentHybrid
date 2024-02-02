@@ -1,0 +1,34 @@
+services:
+  base-experiment:
+    build: .
+    image: pycharm-docker-hybrid:latest
+    user: "${UID}:${GID}"
+    tty: true
+    volumes:
+      - type: volume
+        source: moabb-datasets
+        target: /workspace/datasets
+        volume:
+          nocopy: true
+      - type: bind
+        source: ./reports
+        target: /workspace/outputs
+      - type: bind
+        source: .
+        target: /workspace/project
+      - type: tmpfs
+        target: /workspace/params/
+    shm_size: '2gb'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [ gpu ]
+    ulimits:
+      memlock: -1
+      stack: 67108864
+
+volumes:
+  moabb-datasets:
+    external: true
