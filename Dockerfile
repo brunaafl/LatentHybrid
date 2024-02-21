@@ -1,6 +1,6 @@
 FROM nvcr.io/nvidia/pytorch:23.09-py3
 
-RUN useradd --uid 1006 -U --create-home --shell /bin/bash gabriel
+RUN useradd --uid 1006 -U --create-home --shell /bin/bash bruna
 
 WORKDIR /workspace/project
 COPY requirements.txt .
