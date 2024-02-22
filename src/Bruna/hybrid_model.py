@@ -252,11 +252,11 @@ class HybridModel(nn.Module):
 
         return result
 
-    """def predict(self, X):
+    def predict(self, X):
         return [out.argmax(axis=1) for out in self.predict_proba(X)]
 
     def predict_proba(self, X):
-        return self.forward(X)"""
+        return self.forward(X)
 
     def generate_branch_model(self):
         new_layers = self.init_unique_modules(*self._args)
@@ -301,11 +301,11 @@ class HybridClassifier(EEGClassifier):
         # make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
         return loss
 
-    """def predict(self, X):
+    def predict(self, X):
         return [out.argmax(axis=1) for out in self.predict_proba(X)]
 
     def predict_proba(self, X):
-        return self.forward(X)"""
+        return self.forward(X)
 
 
 class HybridScoring(EpochScoring):
