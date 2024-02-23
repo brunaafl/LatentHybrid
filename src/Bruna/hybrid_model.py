@@ -195,7 +195,7 @@ def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start
 
 model_gen = {
     "DeepNet": [gen_slice_DeepNet, 8, 9],
-    "EEGNet": [gen_slice_EEGNet, 5, 6],
+    "EEGNet": [gen_slice_EEGNet, 12, 13], # 5, 6 / 12, 13
     "ShallowNet": [gen_slice_ShallowNet, 4, 4],
     "ShallowNetShared": [gen_slice_ShallowNet, 0, 0],
     "EEGNetShared": [gen_slice_EEGNet, 0, 0],
@@ -252,11 +252,11 @@ class HybridModel(nn.Module):
 
         return result
 
-    def predict(self, X):
+    """def predict(self, X):
         return [out.argmax(axis=1) for out in self.predict_proba(X)]
 
     def predict_proba(self, X):
-        return self.forward(X)
+        return self.forward(X)"""
 
     def generate_branch_model(self):
         new_layers = self.init_unique_modules(*self._args)
@@ -301,11 +301,11 @@ class HybridClassifier(EEGClassifier):
         # make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
         return loss
 
-    def predict(self, X):
+    """def predict(self, X):
         return [out.argmax(axis=1) for out in self.predict_proba(X)]
 
     def predict_proba(self, X):
-        return self.forward(X)
+        return self.forward(X)"""
 
 
 class HybridScoring(EpochScoring):
