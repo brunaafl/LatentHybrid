@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:23.09-py3
+FROM nvcr.io/nvidia/pytorch:23.05-py3
 
 RUN useradd --uid 1000 -U --create-home --shell /bin/bash bruna
 
