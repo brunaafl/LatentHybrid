@@ -1,8 +1,8 @@
 seed: 2342
 train:
     num_workers: 10
-    run_report: '/workspace/outputs'
-    n_epochs: 1000
+    run_report: '/workspace/outputs/'
+    n_epochs: 10
     patience: 150
     weight_decay: 0.01
     batch_size: 64
