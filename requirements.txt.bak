@@ -1,5 +1,5 @@
 git+https://github.com/NeuroTechX/moabb#egg=moabb
-braindecode~=0.7
+braindecode==0.7
 pandas~=1.5.3
 mlxtend
 omegaconf~=2.3.0

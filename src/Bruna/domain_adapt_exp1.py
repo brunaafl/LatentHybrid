@@ -15,7 +15,6 @@ from moabb.analysis.meta_analysis import (  # noqa: E501
 )
 import matplotlib.pyplot as plt
 
-
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
@@ -25,8 +24,8 @@ from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaPa
 from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 
-from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform, define_hybrid_clf, gen_slice_DeepNet, gen_slice_ShallowNet
-
+from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform, define_hybrid_clf, gen_slice_DeepNet, \
+    gen_slice_ShallowNet
 
 import torchinfo
 
@@ -66,13 +65,13 @@ def main(args):
     # Define paradigm and datasets
     events = ["right_hand", "left_hand"]
     if args.dataset == 'Schirrmeister2017':
-        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3", "CP1", "CPz", "CP6", "CP4", "CP2"]
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
     else:
         ch = None
     paradigm = MotorImagery(events=events, n_classes=len(events), channels=ch)
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
-
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -93,21 +92,22 @@ def main(args):
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
-    rpc = len(meta['session'].unique())*len(meta['run'].unique())
+    rpc = len(meta['session'].unique()) * len(meta['run'].unique())
 
     print(f"(2) Get Data Done {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
     num_subjects = len(dataset.subject_list)
 
-    #testmodel = gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, drop_prob=config.model.drop_prob)
+    # testmodel = gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, drop_prob=config.model.drop_prob)
 
-    model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config, freeze=args.freeze, args=args)
+    model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config,
+                        freeze=args.freeze, args=args)
     # Send model to GPU
     if cuda:
         model.cuda()
 
     torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
-    #torchinfo.summary(model.unique_modules[0], input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
+    # torchinfo.summary(model.unique_modules[0], input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
 
     # Create Classifier
     clf = define_hybrid_clf(model, config, experiment_name)
@@ -137,9 +137,9 @@ def main(args):
     freeze_tag = ["-Frozen", "-Not_Frozen"][args.freeze == "no-freeze"]
 
     if args.ea == 'alignment':
-        pipes[args.model+"|_EA" + freeze_tag] = pipe_with_align
+        pipes[args.model + "|_EA" + freeze_tag] = pipe_with_align
     else:
-        pipes[args.model+"|_Without_EA" + freeze_tag] = pipe
+        pipes[args.model + "|_Without_EA" + freeze_tag] = pipe
 
     print(f"(4) Before eval setup {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
@@ -167,8 +167,9 @@ def main(args):
     print(results.head())
 
     # Save results
+    print(run_dir)
+    print(experiment_name)
     results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
-
 
     print("---------------------------------------")
 
