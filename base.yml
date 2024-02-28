@@ -1,7 +1,7 @@
 services:
   base-experiment:
     build: .
-    image: pycharm-docker-hybrid:latest
+    image: hybrid_image:latest
     user: "${UID}:${GID}"
     tty: true
     volumes:
