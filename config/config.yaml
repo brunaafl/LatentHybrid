@@ -2,13 +2,13 @@ seed: 2342
 train:
     num_workers: 10
     run_report: '/workspace/outputs/'
-    n_epochs: 10
+    n_epochs: 1000
     patience: 150
     weight_decay: 0.01
     batch_size: 64
     lr: 0.001
     valid_split: 0.2
-    experiment_name: 'shared-hybridtest'
+    experiment_name: 'shared-hybridtest-6'
 model:
     drop_prob: 0.3
     final_conv_length: 'auto'
