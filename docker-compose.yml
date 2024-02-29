@@ -14,6 +14,21 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+  shared-test-nofreeze:
+    profiles: ["shared-nofreeze"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-test
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
   jupyter:
     profiles: ["jupyter"]
     #user: "0:0"
