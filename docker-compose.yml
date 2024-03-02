@@ -1,10 +1,10 @@
 services:
-  shared-test:
-    profiles: ["shared"]
+  shared-EA-freeze:
+    profiles: ["Hybrid", "EA", "Freeze"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-test
+    container_name: hybrid-ea-freeze
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001"
     deploy:
       resources:
@@ -14,13 +14,44 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  shared-test-nofreeze:
-    profiles: ["shared-nofreeze"]
+  shared-EA-nofreeze:
+    profiles: ["Hybrid", "EA", "No-freeze"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-test
+    container_name: hybrid-ea-nofreeze
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  shared-noEA-freeze:
+    profiles: ["Hybrid", "No-EA", "freeze"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-freeze
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+
+  shared-noEA-nofreeze:
+    profiles: ["Hybrid", "No-EA", "No-freeze"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-nofreeze
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001"
     deploy:
       resources:
         reservations:
