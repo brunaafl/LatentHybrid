@@ -195,7 +195,7 @@ def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start
 
 model_gen = {
     "DeepNet": [gen_slice_DeepNet, 8, 9],
-    "EEGNet": [gen_slice_EEGNet, 12, 13], # 5, 6 / 12, 13
+    "EEGNet": [gen_slice_EEGNet, 5, 6], # 5, 6 / 12, 13
     "ShallowNet": [gen_slice_ShallowNet, 4, 4],
     "ShallowNetShared": [gen_slice_ShallowNet, 0, 0],
     "EEGNetShared": [gen_slice_EEGNet, 0, 0],
