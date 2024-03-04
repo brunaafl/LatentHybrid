@@ -15,7 +15,7 @@ services:
               capabilities: [ gpu ]
 
   shared-EA-nofreeze:
-    profiles: ["Hybrid", "EA-nofreeze", "No-freeze"]
+    profiles: ["Hybrid", "EA", "No-freeze"]
     extends:
       file: base.yml
       service: base-experiment
