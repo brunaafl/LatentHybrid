@@ -6,9 +6,9 @@ train:
     patience: 150
     weight_decay: 0.01
     batch_size: 64
-    lr: 0.001
+    lr: 0.005
     valid_split: 0.2
-    experiment_name: 'shared-hybridtest-12-batch16-0.001'
+    experiment_name: 'shared-hybridtest-12-batch16-0.005'
 model:
     drop_prob: 0.3
     final_conv_length: 'auto'
