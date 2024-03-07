@@ -252,12 +252,6 @@ class HybridModel(nn.Module):
 
         return result
 
-    """def predict(self, X):
-        return [out.argmax(axis=1) for out in self.predict_proba(X)]
-
-    def predict_proba(self, X):
-        return self.forward(X)"""
-
     def generate_branch_model(self):
         new_layers = self.init_unique_modules(*self._args)
         cloned_layers = copy.deepcopy(self.shared_modules)

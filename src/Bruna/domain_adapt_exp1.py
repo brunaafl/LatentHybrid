@@ -26,6 +26,7 @@ from util import parse_args, set_determinism, set_run_dir
 
 from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform, define_hybrid_clf, gen_slice_DeepNet, \
     gen_slice_ShallowNet
+from paradigm import MotorImagery_
 
 import torchinfo
 
@@ -69,7 +70,7 @@ def main(args):
               "CP1", "CPz", "CP6", "CP4", "CP2"]
     else:
         ch = None
-    paradigm = MotorImagery(events=events, n_classes=len(events), channels=ch)
+    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
