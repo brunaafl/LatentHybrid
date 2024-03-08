@@ -295,13 +295,6 @@ class HybridClassifier(EEGClassifier):
         # make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
         return loss
 
-    """def predict(self, X):
-        return [out.argmax(axis=1) for out in self.predict_proba(X)]
-
-    def predict_proba(self, X):
-        return self.forward(X)"""
-
-
 class HybridScoring(EpochScoring):
     def on_epoch_begin(self, net, dataset_train, dataset_valid, **kwargs):
         self.y_preds_ = []
