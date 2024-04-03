@@ -8,7 +8,7 @@ train:
     batch_size: 64
     lr: 0.001
     valid_split: 0.2
-    experiment_name: 'shared-hybridtest-12-batch16'
+    experiment_name: 'shared-hybridtest-12-batch16-loss'
 model:
     drop_prob: 0.3
     final_conv_length: 'auto'
