@@ -280,7 +280,7 @@ class SpecializedModel(nn.Module):
 
 # Just testing EEGNetShared performance
 class HybridClassifier(EEGClassifier):
-    """
+
     def get_loss(self, y_pred, y_true, *args, **kwargs):
 
         y_true = to_tensor(y_true, device=self.device)
@@ -295,8 +295,9 @@ class HybridClassifier(EEGClassifier):
         loss = sum(losses) / self.module.num_models
 
         # make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
-        return loss"""
+        return loss
 
+    """
     def get_loss(self, y_pred, y_true, *args, **kwargs):
 
         y_true = to_tensor(y_true, device=self.device)
@@ -312,6 +313,7 @@ class HybridClassifier(EEGClassifier):
 
         # make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
         return loss
+    """
 
 
 class HybridScoring(EpochScoring):
