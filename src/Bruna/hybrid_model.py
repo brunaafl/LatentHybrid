@@ -112,7 +112,7 @@ def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, 
     return nn.Sequential(*net)
 
 
-def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5, remove_bn=True):
+def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5, remove_bn=False):
     temp_model = Deep4Net(
         n_chans,
         n_classes,
@@ -140,7 +140,7 @@ def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0,
     return nn.Sequential(*net)
 
 
-def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=True,
+def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=False,
                      norm=None):
     temp_model = EEGNetv4(
         n_chans,
@@ -167,7 +167,7 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
 
 
 def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5,
-                         remove_bn=True):
+                         remove_bn=False):
     temp_model = ShallowFBCSPNet(
         n_chans,
         n_classes,
