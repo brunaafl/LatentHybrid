@@ -1,4 +1,5 @@
 services:
+
   hybrid-EA-freeze:
     profiles: ["Hybrid", "EA", "Freeze"]
     extends:
