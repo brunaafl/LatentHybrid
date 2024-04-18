@@ -112,7 +112,8 @@ def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, 
     return nn.Sequential(*net)
 
 
-def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5, remove_bn=False):
+def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5,
+                      remove_bn=False):
     temp_model = Deep4Net(
         n_chans,
         n_classes,
@@ -610,7 +611,7 @@ class HybridEvaluation(BaseEvaluation):
                 # ix = sessions[test] == 'session_T'
 
                 eval_model = model["Net"].module.generate_branch_model()
-                eval_classifier = define_clf(eval_model, self.eval_config)
+                eval_classifier = define_clf(eval_model, self.eval_config, warm_start=True)
                 if self.EA_in_eval:
                     create_dataset = TransformaParaWindowsDatasetEA(self.len_run)
                 else:
@@ -627,15 +628,15 @@ class HybridEvaluation(BaseEvaluation):
 
                 if type(eval_model.unique_modules) != type(nn.Identity()) or \
                         list(eval_model.shared_modules.parameters())[0].requires_grad:
-                    eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])
-                    create_dataset.y = y[test[ix_eval]]
-                    score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
+                    eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]]) # X[test[ix]], y[test[ix]]
+                    create_dataset.y = y[test[ix]]
+                    score = _score(eval_clf, X[test[ix]], y[test[ix]], scorer)
                 else:
-                    eval_classifier.initialize()
+                    #eval_classifier.initialize()
                     eval_classifier.classes_inferred_ = np.unique(to_numpy(y))
-                    create_dataset.y = y[test[ix_eval]]
-                    Xproc = create_dataset.transform(X[test[ix_eval]], y[test[ix_eval]])
-                    score = _score(eval_classifier, Xproc, y[test[ix_eval]], scorer)
+                    create_dataset.y = y[train]
+                    Xproc = create_dataset.transform(X[train], y[train])
+                    score = _score(eval_classifier, Xproc, y[train], scorer)
 
                 wandb.run.summary['eval_score'] = score
                 wandb.finish()
@@ -657,3 +658,4 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
+            break

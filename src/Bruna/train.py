@@ -51,11 +51,12 @@ def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None)
     return clf
 
 
-def define_clf(model, config):
+def define_clf(model, config, warm_start=False):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
     ----------
+    warm_start
     model: pytorch model
     device: cuda or cpu
     config: dict with the configuration parameters
@@ -86,6 +87,7 @@ def define_clf(model, config):
                    Checkpoint(monitor="valid_loss_best", load_best=True, dirname=f"/workspace/params/tempeval{random.randint(1,100000)}", f_params="params_{last_epoch[epoch]}.pt")],
         device=device,
         verbose=1,
+        warm_start=warm_start,
     )
     return clf
 

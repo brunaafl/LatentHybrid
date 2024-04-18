@@ -48,6 +48,7 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
         X_EA = split_runs_EA(X.get_data(), self.len_run)
+        print('TRANSFORM EA')
 
         dataset = create_from_X_y(
             X=X_EA,
