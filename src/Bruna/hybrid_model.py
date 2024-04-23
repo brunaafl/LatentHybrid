@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import OneCycleLR
 from skorch.dataset import ValidSplit, unpack_data
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
 from skorch.callbacks.scoring import _cache_net_forward_iter
-from skorch.utils import to_tensor, to_numpy
+from skorch.utils import to_tensor, to_numpy, to_device
 
 import numpy as np
 import pandas as pd
@@ -224,7 +224,8 @@ class HybridModel(nn.Module):
         self.model_type = model_type
         self.shared_modules = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, config,
                                                             start=model_gen[self.model_type][2],
-                                                            norm=norms[self.args.sharednorm])
+                                                            norm=norms[self.args.sharednorm],
+                                                            remove_bn=False)
         self.unique_modules = nn.ModuleList()
         self.freeze = freeze == "freeze"
         self.norm = nn.Identity()
@@ -233,7 +234,9 @@ class HybridModel(nn.Module):
 
     def init_unique_modules(self, n_chans, n_classes, input_window_samples):
         unique_head = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, self.config,
-                                                    end=model_gen[self.model_type][1], norm=norms[self.args.uniquenorm])
+                                                    end=model_gen[self.model_type][1],
+                                                    norm=norms[self.args.uniquenorm],
+                                                    remove_bn=False)
         return unique_head
 
     def split_input(self, X):
@@ -387,7 +390,6 @@ def average_acc_scoring(model, x, y_true):
         predictions = np.argmax(subject_slice, axis=1)
         accuracies_per_subject.append(accuracy_score(true_slice, predictions))
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
-
 
 def active_wandb(args, config, subject, train=True):
     wconfig = {
@@ -658,4 +660,4 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
-            break
+            #break

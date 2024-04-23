@@ -1,0 +1,17 @@
+seed: 1234
+train:
+    num_workers: 10
+    run_report: '/workspace/outputs'
+    n_epochs: 1000
+    patience: 200
+    weight_decay: 0
+    batch_size: 12
+    lr: 0.00001 #0.00001
+    valid_split: 0.2
+    experiment_name: 'exp5_comp'
+model:
+    drop_prob: 0.3
+    final_conv_length: 'auto'
+
+dataset:
+    path: "/workspace/datasets/"

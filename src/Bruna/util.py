@@ -167,6 +167,7 @@ def parse_args():
         type=str,
         default="config/eval_config.yaml",
         help="Path to config file with all the evaluation parameters needed (only for hybrid domain adaptation)",
+        choices=["config/eval_config.yaml", "config/eval_config_shared.yaml"],
     )
 
     parser.add_argument(
@@ -175,6 +176,14 @@ def parse_args():
         help="select model",
         default="EEGNet",
         choices=["EEGNet", "DeepNet", "ShallowNet", "DeepNetShared", "ShallowNetShared", "EEGNetShared", "EEGNetNormTest"],
+    )
+
+    parser.add_argument(
+        "--remove_bn",
+        type=bool,
+        default=False,
+        help="To remove batchnormalization layers",
+        choices=[True, False],
     )
 
     parser.add_argument(
