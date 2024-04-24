@@ -161,15 +161,20 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
     if remove_bn:
         for i, module in enumerate(net):
             if isinstance(net[i], nn.BatchNorm2d):
-                net[i] = nn.Identity()
+                if i == len(net) - 1 and start == 0:
+                    net[i] = net[i]
+                else:
+                    net[i] = nn.Identity()
     #else:
     #    net.append(nn.LayerNorm(([1, 1002]), elementwise_affine=False))
+    #if start == 0 and end != 0:
+        #Here, add batchnorm in the end of the individual modules
 
     return nn.Sequential(*net)
 
 
 def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5,
-                         remove_bn=False):
+                         remove_bn=True, bn_end=True):
     temp_model = ShallowFBCSPNet(
         n_chans,
         n_classes,
@@ -192,12 +197,14 @@ def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start
 
     net = list(temp_model.children())[start:end]
 
+    #Here, if
+
     return nn.Sequential(*net)
 
 
 model_gen = {
     "DeepNet": [gen_slice_DeepNet, 8, 9],
-    "EEGNet": [gen_slice_EEGNet, 12, 13],  # 5, 6 / 12, 13
+    "EEGNet": [gen_slice_EEGNet, 12, 12],  # 5, 6 / 12, 13
     "ShallowNet": [gen_slice_ShallowNet, 4, 4],
     "ShallowNetShared": [gen_slice_ShallowNet, 0, 0],
     "EEGNetShared": [gen_slice_EEGNet, 0, 0],
