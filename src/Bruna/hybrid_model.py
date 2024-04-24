@@ -232,7 +232,7 @@ class HybridModel(nn.Module):
         self.shared_modules = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, config,
                                                             start=model_gen[self.model_type][2],
                                                             norm=norms[self.args.sharednorm],
-                                                            remove_bn=False)
+                                                            remove_bn=True)
         self.unique_modules = nn.ModuleList()
         self.freeze = freeze == "freeze"
         self.norm = nn.Identity()
@@ -243,7 +243,7 @@ class HybridModel(nn.Module):
         unique_head = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, self.config,
                                                     end=model_gen[self.model_type][1],
                                                     norm=norms[self.args.uniquenorm],
-                                                    remove_bn=False)
+                                                    remove_bn=True)
         return unique_head
 
     def split_input(self, X):
