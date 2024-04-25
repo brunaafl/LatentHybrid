@@ -161,14 +161,12 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
     if remove_bn:
         for i, module in enumerate(net):
             if isinstance(net[i], nn.BatchNorm2d):
+                print(i)
                 if i == len(net) - 1 and start == 0:
+                    print('mantain')
                     net[i] = net[i]
                 else:
                     net[i] = nn.Identity()
-    #else:
-    #    net.append(nn.LayerNorm(([1, 1002]), elementwise_affine=False))
-    #if start == 0 and end != 0:
-        #Here, add batchnorm in the end of the individual modules
 
     return nn.Sequential(*net)
 
