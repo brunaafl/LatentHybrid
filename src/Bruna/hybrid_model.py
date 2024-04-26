@@ -141,14 +141,22 @@ def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0,
     return nn.Sequential(*net)
 
 
-def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn=False,
+def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5, remove_bn='False',
                      norm=None):
+
+    # Maybe? Does it make any sense?
+    # Justification: if we are putting the lr of the eval lower, maybe it would make sense if the drop was lower to help fitting
+    if start == 0 and end < 19:
+        drop_prob = config.model.drop_prob * 0.9
+    else:
+        drop_prob = config.model.drop_prob
+
     temp_model = EEGNetv4(
         n_chans,
         n_classes,
         input_window_samples=input_window_samples,
         final_conv_length=config.model.final_conv_length,
-        drop_prob=config.model.drop_prob
+        drop_prob=drop_prob
     )
 
     if end == 0:
@@ -158,16 +166,17 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
         return temp_model
 
     net = list(temp_model.children())[start:end]
-    if remove_bn:
+    if remove_bn == 'True':
         for i, module in enumerate(net):
             if isinstance(net[i], nn.BatchNorm2d):
-                print(i)
+                net[i] = nn.Identity()
+    elif remove_bn == 'One-bn':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
                 if i == len(net) - 1 and start == 0:
-                    print('mantain')
                     net[i] = net[i]
                 else:
                     net[i] = nn.Identity()
-
     return nn.Sequential(*net)
 
 
@@ -230,7 +239,7 @@ class HybridModel(nn.Module):
         self.shared_modules = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, config,
                                                             start=model_gen[self.model_type][2],
                                                             norm=norms[self.args.sharednorm],
-                                                            remove_bn=True)
+                                                            remove_bn='False')
         self.unique_modules = nn.ModuleList()
         self.freeze = freeze == "freeze"
         self.norm = nn.Identity()
@@ -241,7 +250,7 @@ class HybridModel(nn.Module):
         unique_head = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, self.config,
                                                     end=model_gen[self.model_type][1],
                                                     norm=norms[self.args.uniquenorm],
-                                                    remove_bn=True)
+                                                    remove_bn='False')
         return unique_head
 
     def split_input(self, X):

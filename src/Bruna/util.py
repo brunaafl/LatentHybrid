@@ -180,10 +180,10 @@ def parse_args():
 
     parser.add_argument(
         "--remove_bn",
-        type=bool,
-        default=False,
+        type=str,
+        default='False',
         help="To remove batchnormalization layers",
-        choices=[True, False],
+        choices=['True', 'False', 'One-bn'],
     )
 
     parser.add_argument(
