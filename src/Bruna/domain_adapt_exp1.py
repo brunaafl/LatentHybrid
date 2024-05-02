@@ -159,7 +159,8 @@ def main(args):
         eval_config=eval_config,
         EA_in_eval=(args.ea == 'alignment'),
         len_run=len_run,
-        wandb_params=(args, config)
+        wandb_params=(args, config),
+        run_dir=run_dir
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
@@ -170,7 +171,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
+    results.to_csv(f"{run_dir}/{experiment_name}_{args.remove_bn}_results.csv")
 
     print("---------------------------------------")
 
