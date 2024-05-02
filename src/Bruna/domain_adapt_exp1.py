@@ -170,7 +170,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/{experiment_name}_{eval_config.train.lr}_results.csv")
+    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
     print("---------------------------------------")
 
