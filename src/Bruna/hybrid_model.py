@@ -88,8 +88,7 @@ def initmod(module):
     return module
 
 
-def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5,
-                              norm=nn.BatchNorm2d):
+def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, start=0, end=19,  norm=nn.BatchNorm2d):
     temp_model = EEGNetv4(
         n_chans,
         n_classes,
@@ -112,8 +111,7 @@ def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, 
     return nn.Sequential(*net)
 
 
-def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5,
-                      remove_bn=False):
+def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, remove_bn=False):
     temp_model = Deep4Net(
         n_chans,
         n_classes,
@@ -141,9 +139,7 @@ def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0,
     return nn.Sequential(*net)
 
 
-def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, drop_prob=0.5,
-                     remove_bn='False',
-                     norm=None):
+def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn='False',):
     # Maybe? Does it make any sense?
     # Justification: if we are putting the lr of the eval lower, maybe it would make sense if the drop was lower to help fitting
     if start == 0 and end < 19:
@@ -200,7 +196,6 @@ def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start
         for i, module in enumerate(temp_model):
             if isinstance(temp_model[i], nn.BatchNorm2d):
                 pass
-            # temp_model[i] = nn.LayerNorm([977, 1])
 
     net = list(temp_model.children())[start:end]
 
@@ -209,7 +204,7 @@ def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start
 
 model_gen = {
     "DeepNet": [gen_slice_DeepNet, 8, 9],
-    "EEGNet": [gen_slice_EEGNet, 12, 12],  # 5, 6 / 12, 13
+    "EEGNet": [gen_slice_EEGNet, 12, 12],
     "ShallowNet": [gen_slice_ShallowNet, 4, 4],
     "ShallowNetShared": [gen_slice_ShallowNet, 0, 0],
     "EEGNetShared": [gen_slice_EEGNet, 0, 0],

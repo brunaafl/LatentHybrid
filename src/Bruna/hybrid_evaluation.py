@@ -1,30 +1,17 @@
-import copy
-
-import torch
 from torch import nn
-from torch.optim.lr_scheduler import OneCycleLR
 
-from skorch.dataset import ValidSplit, unpack_data
-from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
-from skorch.callbacks.scoring import _cache_net_forward_iter
-from skorch.utils import to_tensor, to_numpy, to_device
+from skorch.callbacks import WandbLogger
+from skorch.utils import to_numpy
 
 import numpy as np
-import pandas as pd
-
-from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
-from braindecode import EEGClassifier
-from braindecode.datasets import BaseDataset, BaseConcatDataset
-from braindecode.preprocessing import create_fixed_length_windows
 
 from sklearn.model_selection import (
     LeaveOneGroupOut,
 )
-from sklearn.model_selection._validation import _fit_and_score, _score
+from sklearn.model_selection._validation import _score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import get_scorer
-from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
-from sklearn.metrics import accuracy_score
+
 from sklearn.pipeline import Pipeline
 
 from tqdm import tqdm
@@ -36,27 +23,12 @@ from time import time
 from copy import deepcopy
 
 from mne.epochs import BaseEpochs
-import mne
-
-import pdb
-
-# from torchviz import make_dot
 
 from train import define_clf
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 
-from dataset import split_runs_EA
-
 import wandb
-
-from torch.nn import init
-
-from braindecode.augmentation import AugmentedDataLoader, GaussianNoise
-
-from torch.nn.modules.lazy import LazyModuleMixin
-from torch.nn.parameter import UninitializedBuffer
-from torch.nn.parameter import UninitializedParameter
 
 
 class HybridEvaluation(BaseEvaluation):
@@ -109,15 +81,19 @@ class HybridEvaluation(BaseEvaluation):
         print(f"(3) Setup done {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
         cv = LeaveOneGroupOut()
+
         # Progressbar at subject level
         subject_num = 0
         for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject", ):
             subject = groups[test[0]]
+
             # now we can check if this subject has results
             run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
 
             # iterate over pipelines
             for name, clf in run_pipes.items():
+
+                # Start wandb monitoring
                 t_start = time()
                 copyclf = deepcopy(clf)
                 subject_num += 1
@@ -125,6 +101,8 @@ class HybridEvaluation(BaseEvaluation):
                 for callback in copyclf['Net'].callbacks:
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
+
+                # Fit
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
                 wandb.finish()
@@ -132,7 +110,6 @@ class HybridEvaluation(BaseEvaluation):
                 duration = time() - t_start
 
                 ix = test < (self.len_run * 2 + test[0])
-                # ix = sessions[test] == 'session_T'
 
                 eval_model = model["Net"].module.generate_branch_model()
                 eval_classifier = define_clf(eval_model, self.eval_config, warm_start=True)
@@ -210,10 +187,9 @@ def active_wandb(args, config, subject, train=True):
     }
 
     run = wandb.init(
-        project="Hybrid EEG",
+        project=f"{args.type} EEG",
         group=config.train.experiment_name,
         name=f"{subject}-Shared:{args.sharednorm}-Unique:{args.uniquenorm}",
         config=wconfig
     )
     return run
-

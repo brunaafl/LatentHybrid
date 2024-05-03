@@ -46,3 +46,27 @@ def euclidean_alignment(data, y=None):
         r_op = 0
 
     return result, r_op
+
+
+def compute_EA(X, size=24, domain=None, estimator='lwf', dtype='raw'):
+    X_aux = []
+
+    if domain is not None:
+        for d in np.unique(domain):
+            X_batch = X[domain == d]
+            X_batch_EA, _ = euclidean_alignment(X_batch)
+            X_aux.append(X_batch_EA)
+        covmat_EA = np.concatenate(X_aux)
+    else:
+        if size is None:
+            m = X.shape[0]
+        else:
+            m = size
+        n = X.shape[0]
+
+        for k in range(int(n / m)):
+            X_batch = X[k * m:(k + 1) * m]
+            X_batch_EA, _ = euclidean_alignment(X_batch)
+            X_aux.append(X_batch_EA)
+        covmat_EA = np.concatenate(X_aux)
+    return covmat_EA

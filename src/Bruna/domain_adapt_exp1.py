@@ -99,8 +99,6 @@ def main(args):
 
     num_subjects = len(dataset.subject_list)
 
-    # testmodel = gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, drop_prob=config.model.drop_prob)
-
     model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config,
                         freeze=args.freeze, args=args)
     # Send model to GPU
@@ -108,15 +106,11 @@ def main(args):
         model.cuda()
 
     torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
-    # torchinfo.summary(model.unique_modules[0], input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
 
     # Create Classifier
     clf = define_hybrid_clf(model, config, experiment_name)
 
     print(f"(3) Created clf {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
-
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(rpc, n_classes)
-    create_dataset = TransformaParaWindowsDataset()
 
     runs = meta.run.values
     sessions = meta.session.values
@@ -171,7 +165,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/{experiment_name}_{args.remove_bn}_results.csv")
+    results.to_csv(f"{run_dir}/{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_results.csv")
 
     print("---------------------------------------")
 

@@ -53,32 +53,17 @@ class SharedEvaluation(BaseEvaluation):
 
     def evaluate(self, dataset, pipelines, grid_search):
 
-        """Evaluate results on a single dataset.
-
-        This method return a generator. each results item is a dict with
-        the following convension::
-
-            res = {'time': Duration of the training ,
-                   'dataset': dataset id,
-                   'subject': subject id,
-                   'session': session id,
-                   'score': score,
-                   'n_samples': number of training examples,
-                   'n_channels': number of channel,
-                   'pipeline': pipeline name}
-        """
-
+        # Get data
         init_time = time()
         X, y, metadata = self.paradigm.get_data(dataset, return_epochs=self.return_epochs)
         print(f"(1) Data got {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
-        # encode labels
+        # Encode labels
         le = LabelEncoder()
         y = y if self.mne_labels else le.fit_transform(y)
-
         print(f"(2) Encoded {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
-        # extract metadata
+        # Extract metadata
         groups = metadata.subject.values
         sessions = metadata.session.values
         n_subjects = len(dataset.subject_list)
@@ -88,15 +73,20 @@ class SharedEvaluation(BaseEvaluation):
         print(f"(3) Setup done {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
         cv = LeaveOneGroupOut()
+
         # Progressbar at subject level
         subject_num = 0
+
         for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject", ):
             subject = groups[test[0]]
+
             # now we can check if this subject has results
             run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
 
             # iterate over pipelines
             for name, clf in run_pipes.items():
+
+                # Fit and update progress
                 t_start = time()
                 copyclf = deepcopy(clf)
                 subject_num += 1
@@ -110,8 +100,8 @@ class SharedEvaluation(BaseEvaluation):
 
                 duration = time() - t_start
 
+                # Separate len_run*2 trials for test
                 ix = test < (self.len_run * 2 + test[0])
-                # ix = sessions[test] == 'session_T'
 
                 eval_model = model["Net"].module.generate_branch_model()
                 eval_classifier = define_clf(eval_model, self.eval_config, warm_start=True)
