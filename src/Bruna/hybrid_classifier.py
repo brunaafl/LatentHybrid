@@ -11,7 +11,7 @@ from braindecode import EEGClassifier
 
 import wandb
 
-from src.Bruna.hybrid_scoring import HybridScoring
+from hybrid_scoring import HybridScoring
 
 
 class HybridClassifier(EEGClassifier):
@@ -29,26 +29,7 @@ class HybridClassifier(EEGClassifier):
 
         loss = sum(losses) / self.module.num_models
 
-        # make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
         return loss
-
-    """
-    def get_loss(self, y_pred, y_true, *args, **kwargs):
-
-        y_true = to_tensor(y_true, device=self.device)
-        y_pred_flat = []
-        for subject in range(y_pred.shape[0]):
-            subject_slice = torch.select(y_pred, 0, subject)
-            if y_pred.requires_grad:
-                subject_slice.retain_grad()
-            y_pred_flat.append(subject_slice)
-        y_pred_flat = torch.cat(y_pred_flat, dim=0)
-        y_true_flat = torch.flatten(y_true)
-        loss = self.criterion_(y_pred_flat, y_true_flat)
-
-        # make_dot(y_pred, show_attrs=True, params=dict(self.module.named_parameters())).render("model", format="svg")
-        return loss
-    """
 
 
 def get_subject_acc_scorer(subject):

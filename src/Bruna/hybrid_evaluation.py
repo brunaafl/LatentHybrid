@@ -109,6 +109,7 @@ class HybridEvaluation(BaseEvaluation):
 
                 duration = time() - t_start
 
+                # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
                 eval_model = model["Net"].module.generate_branch_model()
@@ -119,26 +120,51 @@ class HybridEvaluation(BaseEvaluation):
                     create_dataset = TransformaParaWindowsDataset()
                 eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
+                # Evaluation set
                 ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
                                          test < (test[0] + model["Hybrid_adapter"].n_trials_used))
 
                 eval_run = active_wandb(self.wandb_params[0], self.eval_config, subject_num, train=False)
+
                 for callback in eval_classifier.callbacks:
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
 
                 if type(eval_model.unique_modules) != type(nn.Identity()) or \
                         list(eval_model.shared_modules.parameters())[0].requires_grad:
-                    eval_clf = eval_pipe.fit(X[test[ix]], y[test[ix]])  # X[test[ix]], y[test[ix]]
+
+                    """for i in range(len(list(eval_pipe['Net'].module.shared_modules.parameters()))):
+                        p_eval = list(eval_pipe['Net'].module.shared_modules.parameters())[i]
+                        p_model = list(model["Net"].module.shared_modules.parameters())[i]
+                        print(p_model == p_eval)"""
+
+                    eval_clf = eval_pipe.fit(X[test[ix_eval]], y[test[ix_eval]])
                     create_dataset.y = y[test[ix]]
                     score = _score(eval_clf, X[test[ix]], y[test[ix]], scorer)
+
                 else:
-                    """copyclf['Net'].save_params(
-                        f_params=str(run_dir / f"final_model_params_{subject}.pkl"),
-                        f_history=str(run_dir / f"final_model_history_{subject}.json"),
-                        f_criterion=str(run_dir / f"final_model_criterion_{subject}.pkl"),
-                        f_optimizer=str(run_dir / f"final_model_optimizer_{subject}.pkl"),
-                    )"""
+
+                    eval_classifier.initialize()
+                    eval_classifier.module = deepcopy(model["Net"].module.shared_modules)
+                    eval_classifier.module_ = deepcopy(model["Net"].module.shared_modules)
+
+                    """for i in range(len(list(eval_classifier.module_.parameters()))):
+                        p_eval = list(eval_classifier.module_.parameters())[i]
+                        p_model = list(model["Net"].module_.shared_modules.parameters())[i]
+                        print('module_')
+                        print(p_model == p_eval)
+                        print('module')
+                        p_eval = list(eval_classifier.module_.parameters())[i]
+                        p_model = list(model["Net"].module_.shared_modules.parameters())[i]
+                        print(p_model == p_eval)"""
+
+                    for param in list(eval_classifier.module_.parameters()):
+                        param.requires_grad = False
+
+                    for param in list(eval_classifier.module.parameters()):
+                        param.requires_grad = False
+
+                    # TODO: Shuffle test
                     eval_classifier.classes_inferred_ = np.unique(to_numpy(y))
                     create_dataset.y = y[train]
                     Xproc = create_dataset.transform(X[train], y[train])
@@ -187,7 +213,7 @@ def active_wandb(args, config, subject, train=True):
     }
 
     run = wandb.init(
-        project=f"{args.type} EEG",
+        project=f"{args.model}",
         group=config.train.experiment_name,
         name=f"{subject}-Shared:{args.sharednorm}-Unique:{args.uniquenorm}",
         config=wconfig

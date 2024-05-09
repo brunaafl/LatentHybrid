@@ -1,11 +1,11 @@
 services:
 
   hybrid-EA-freeze-bn:
-    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN"]
+    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze
+    container_name: hybrid-ea-freeze-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False"
     deploy:
       resources:
@@ -20,7 +20,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze
+    container_name: hybrid-ea-freeze-nobn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn True"
     deploy:
       resources:
@@ -35,7 +35,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze
+    container_name: hybrid-ea-freeze-onebn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn One-bn"
     deploy:
       resources:
@@ -50,7 +50,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-nofreeze
+    container_name: hybrid-ea-nofreeze-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False"
     deploy:
       resources:
@@ -65,7 +65,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-nofreeze
+    container_name: hybrid-ea-nofreeze-nobn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn True"
     deploy:
       resources:
@@ -80,7 +80,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-nofreeze
+    container_name: hybrid-ea-nofreeze-onebn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn One-bn"
     deploy:
       resources:
@@ -95,7 +95,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze
+    container_name: hybrid-noea-freeze-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False"
     deploy:
       resources:
@@ -110,7 +110,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze
+    container_name: hybrid-noea-freeze-nobn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn True"
     deploy:
       resources:
@@ -125,7 +125,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze
+    container_name: hybrid-noea-freeze-onebn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn One-bn"
     deploy:
       resources:
@@ -136,11 +136,11 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noEA-nofreeze-bn:
-    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN"]
+    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN", "Hybrid-BN-noEA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-nofreeze
+    container_name: hybrid-noea-nofreeze-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False"
     deploy:
       resources:
@@ -155,7 +155,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-nofreeze
+    container_name: hybrid-noea-nofreeze-nobn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn True"
     deploy:
       resources:
@@ -170,7 +170,7 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-nofreeze
+    container_name: hybrid-noea-nofreeze-onebn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn One-bn"
     deploy:
       resources:
@@ -180,7 +180,7 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  shared-EA-freeze-nobn:
+  shared-EA-freeze:
     profiles: ["Shared", "EA", "Freeze", "Shared-EA-Freeze"]
     extends:
       file: base.yml
@@ -195,7 +195,7 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  shared-EA-nofreeze-onebn:
+  shared-EA-nofreeze:
     profiles: ["Shared", "EA", "No-freeze", 'Shared-EA-NoFreeze']
     extends:
       file: base.yml

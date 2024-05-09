@@ -5,38 +5,27 @@ Baseline script to analyse the EEG Dataset.
 
 import torch
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
-from moabb.evaluations import CrossSubjectEvaluation
 from moabb.paradigms import MotorImagery, LeftRightImagery
-
-import moabb.analysis.plotting as moabb_plt
-from moabb.analysis.meta_analysis import (  # noqa: E501
-    compute_dataset_statistics,
-    find_significant_differences,
-)
-import matplotlib.pyplot as plt
 
 from omegaconf import OmegaConf
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 from moabb.utils import set_download_dir
 
-from pipeline import ClassifierModel, TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 
-from hybrid_model import HybridModel, HybridEvaluation, HybridAggregateTransform, define_hybrid_clf, gen_slice_DeepNet, \
-    gen_slice_ShallowNet
+from hybrid_model import HybridModel
+from hybrid_evaluation import HybridEvaluation
+from hybrid_transform import HybridAggregateTransform
+from hybrid_classifier import define_hybrid_clf
+
 from paradigm import MotorImagery_
 
 import torchinfo
 
 import numpy as np
 
-import pdb
-
 from time import time
-
-from braindecode.models import EEGNetv4, Deep4Net
 
 """
 For the joint model

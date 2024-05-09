@@ -3,6 +3,7 @@ import mne
 from time import time
 import numpy as np
 import pandas as pd
+import torch
 
 from braindecode.datasets import BaseDataset, BaseConcatDataset
 from braindecode.preprocessing import create_fixed_length_windows
@@ -13,11 +14,12 @@ from dataset import split_runs_EA
 
 
 class HybridAggregateTransform(BaseEstimator, TransformerMixin):
-    def __init__(self, EA_len_run=None, kw_args=None):
+    def __init__(self, EA_len_run=None, kw_args=None, shuffle=False):
         self.kw_args = kw_args
         self.use_EA = EA_len_run != None
         self.EA_len_run = EA_len_run
         self.n_trials_used = 0
+        self.shuffle = shuffle
 
     def fit(self, X, y=None, subject_groups=None, info=None, labels=None):
         self.labels = labels
@@ -38,6 +40,19 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
         for index, trial in enumerate(X):
             subjects[self.groups[index]].append((trial, self.labels[index]))
 
+        """subjects = {}
+        for s in np.unique(self.groups):
+            subjects_s = X[self.groups == s]
+            y_s = self.labels[self.groups == s]
+
+            if self.shuffle:
+                torch.manual_seed(2342)
+                idx = torch.randperm(subjects_s.shape[0])
+                subjects_s = subjects_s[idx].view(subjects_s.size())
+                y_s = y_s[idx].view(y_s.size())
+
+            subjects[s] = (subjects_s, y_s)"""
+
         print(f"(2) Split {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
 
         # Get number of trials per subject
@@ -56,10 +71,12 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
             trial = []
             target = []
 
-            # Create new trials such that one trial corresponds of one trial of each subject
+            # TODO: Shuffle data
             for subject in subjects:
+
                 trial.append(subjects[subject][trial_i][0])
                 target.append(subjects[subject][trial_i][1])
+
             info = mne.create_info(ch_names=ch_names, sfreq=self.info["sfreq"])
             raw = mne.io.RawArray(np.vstack(trial) * 1e6, info)
             base_dataset = BaseDataset(raw, pd.Series({"target": np.array(target)}), target_name="target")

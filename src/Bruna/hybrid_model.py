@@ -2,62 +2,13 @@ import copy
 
 import torch
 from torch import nn
-from torch.optim.lr_scheduler import OneCycleLR
-
-from skorch.dataset import ValidSplit, unpack_data
-from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
-from skorch.callbacks.scoring import _cache_net_forward_iter
-from skorch.utils import to_tensor, to_numpy, to_device
-
-import numpy as np
-import pandas as pd
 
 from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
-from braindecode import EEGClassifier
-from braindecode.datasets import BaseDataset, BaseConcatDataset
-from braindecode.preprocessing import create_fixed_length_windows
-
-from sklearn.model_selection import (
-    LeaveOneGroupOut,
-)
-from sklearn.model_selection._validation import _fit_and_score, _score
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import get_scorer
-from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
-from sklearn.metrics import accuracy_score
-from sklearn.pipeline import Pipeline
-
-from tqdm import tqdm
-
-from moabb.evaluations.base import BaseEvaluation
-
-from time import time
-
-from copy import deepcopy
-
-from mne.epochs import BaseEpochs
-import mne
-
-import pdb
-
-# from torchviz import make_dot
-
-from train import define_clf
-
-from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-
-from dataset import split_runs_EA
-
-import wandb
 
 from torch.nn import init
 
-from braindecode.augmentation import AugmentedDataLoader, GaussianNoise
-
 from torch.nn.modules.lazy import LazyModuleMixin
-from torch.nn.parameter import UninitializedBuffer
 from torch.nn.parameter import UninitializedParameter
-
 
 class LazyLayerNorm(LazyModuleMixin, nn.LayerNorm):
     cls_to_become = nn.LayerNorm
@@ -221,7 +172,7 @@ norms = {
 
 
 class HybridModel(nn.Module):
-    def __init__(self, num_models, model_type, n_chans, n_classes, input_window_samples, config=None, freeze=None,
+    def __init__(self, num_models, model_type, n_chans, n_classes, input_window_samples, config=None, freeze='freeze',
                  args=None):
         super(HybridModel, self).__init__()
         self._args = (n_chans, n_classes, input_window_samples)
@@ -231,7 +182,6 @@ class HybridModel(nn.Module):
         self.model_type = model_type
         self.shared_modules = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, config,
                                                             start=model_gen[self.model_type][2],
-                                                            norm=norms[self.args.sharednorm],
                                                             remove_bn=self.args.remove_bn)
         self.unique_modules = nn.ModuleList()
         self.freeze = freeze == "freeze"
@@ -242,7 +192,6 @@ class HybridModel(nn.Module):
     def init_unique_modules(self, n_chans, n_classes, input_window_samples):
         unique_head = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, self.config,
                                                     end=model_gen[self.model_type][1],
-                                                    norm=norms[self.args.uniquenorm],
                                                     remove_bn=self.args.remove_bn)
         return unique_head
 
@@ -253,6 +202,9 @@ class HybridModel(nn.Module):
         inputs = self.split_input(x)
         out = []
         for i, model_input in enumerate(inputs):
+            """print(len(model_input))
+            if i == 0:
+                print(model_input[0])"""
             temp_unique = self.unique_modules[i](model_input)
             # pdb.set_trace()
             temp_norm = self.norm(temp_unique)
