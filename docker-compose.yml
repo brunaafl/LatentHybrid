@@ -180,6 +180,36 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+  basic-shared-EA:
+    profiles: ["Basic-Shared-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: basic-shared-ea
+    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml "
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  basic-shared-NoEA:
+    profiles: ["Basic-Shared-NoEA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: basic-shared-noea
+    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml "
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
   shared-EA-freeze:
     profiles: ["Shared", "EA", "Freeze", "Shared-EA-Freeze"]
     extends:
@@ -211,7 +241,7 @@ services:
               capabilities: [ gpu ]
 
   shared-noEA-freeze:
-    profiles: ["Shared", "No-EA", "freeze", 'Shared-NoEA']
+    profiles: ["Shared", "No-EA", "freeze", 'Shared-NoEA', 'Shared-NoEA-Freeze']
     extends:
       file: base.yml
       service: base-experiment

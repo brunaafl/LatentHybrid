@@ -8,11 +8,15 @@ from braindecode.models import EEGNetv4
 from sklearn.base import clone
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import LeaveOneOut
-from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, Checkpoint, WandbLogger
+from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, Checkpoint, WandbLogger, GradientNormClipping
 from skorch.dataset import ValidSplit
 from skorch.helper import predefined_split, SliceDataset
 
 import random
+
+from hybrid_classifier import HybridClassifier, get_subject_acc_scorer, average_acc_scoring
+from hybrid_scoring import HybridScoring
+
 
 def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None):
     weight_decay = 0
@@ -70,6 +74,7 @@ def define_clf(model, config, warm_start=False):
     patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+
     clf = EEGClassifier(
         model,
         criterion=torch.nn.NLLLoss,
@@ -92,51 +97,52 @@ def define_clf(model, config, warm_start=False):
     return clf
 
 
-def train_all_loo(model, Data_subjects, device, subject_ids, val_subj=None):
-    loo = LeaveOneOut()
-    list_s = list(range(len(subject_ids)))
+# TODO: Deleting after the test
+def define_clf_hybrid(model, config, warm_start=True, experiment_name=None):
+    """
+    Transform the pytorch model into classifier object to be used in the training
+    Parameters
+    ----------
+    model: pytorch model
+    config: dict with the configuration parameters
+    Returns
+    -------
+    clf: skorch classifier
+    """
+    weight_decay = config.train.weight_decay
+    batch_size = config.train.batch_size
+    lr = config.train.lr
+    patience = config.train.patience
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(model.num_models)
 
-    models_list = []
-    predicts_list = []
-    # Using Leave-One-Out validation
-    for train_idx, test_idx in loo.split(list_s):
-        train_idx = train_idx + 1
-        test_idx = test_idx + 1
-        print("Test subject:", test_idx[0])
-        test_subj = test_idx[0]
-        # Split in Train and Test
-        Test = Data_subjects[f'{test_subj}']
-        # Test_1,Test_2=Split_Train_Val(Test, val_subj=None)
-        Train = BaseConcatDataset([Data_subjects[f'{i}'] for i in train_idx])
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs)
 
-        # Split in Train and Validation IF WE WANT
-        # Train, Val = split_train_val(Train_Aux, val_subj=val_subj)
+    scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i:02d}_valid_acc',
+                                       lower_is_better=False) for i in range(model.num_models)]
 
-        clf = train(copy.deepcopy(model), Train, device)
-
-        y_pred = clf.predict(Test)
-        y_true = list(SliceDataset(Test, 1))
-
-        predicts_list.append((y_pred, y_true))
-        models_list.append(clf)
-
-        clf.save_params(
-            f_params=f"final_model_params_{test_idx}.pkl",
-            f_history=f"final_model_history_{test_idx}.json",
-            f_criterion=f"final_model_criterion_{test_idx}.pkl",
-            f_optimizer=f"final_model_optimizer_{test_idx}.pkl",
-        )
-
-    return models_list, predicts_list
-
-
-def train_func(model, Train_data, Test_data, Val_data, device):
-    clf = train(copy.deepcopy(model), Train_data, Val_data, device)
-    y_pred_t = clf.predict(Test_data)
-    y_true_t = list(SliceDataset(Test_data, 1))
-    bac = roc_auc_score(y_true=y_true_t, y_pred=y_pred_t)
-
-    return clf, bac
+    clf = HybridClassifier(
+        model,
+        criterion=torch.nn.NLLLoss,
+        optimizer=torch.optim.AdamW,
+        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
+        optimizer__lr=lr,
+        optimizer__weight_decay=weight_decay,
+        batch_size=batch_size,
+        max_epochs=config.train.n_epochs,
+        callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
+                   GradientNormClipping(gradient_clip_value=1),
+                   Checkpoint(monitor="valid_loss_best", load_best=True,
+                              dirname=f"/workspace/params/temptrain-{experiment_name}", f_params="params.pt"),
+                   lrscheduler,
+                   HybridScoring(scoring=average_acc_scoring, on_train=True, name='avg_train_acc',
+                                 lower_is_better=False),
+                   HybridScoring(scoring=average_acc_scoring, on_train=False, name='avg_valid_acc',
+                                 lower_is_better=False)] + scoring_callbacks,
+        device=device,
+        verbose=1,
+        warm_start=warm_start)
+    return clf
 
 
 def init_model(n_chans, n_classes, input_window_samples, config):

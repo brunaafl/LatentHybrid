@@ -10,7 +10,7 @@ from sklearn.model_selection import (
 )
 from sklearn.model_selection._validation import _score
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import get_scorer
+from sklearn.metrics import get_scorer, accuracy_score
 
 from sklearn.pipeline import Pipeline
 
@@ -133,42 +133,35 @@ class HybridEvaluation(BaseEvaluation):
                 if type(eval_model.unique_modules) != type(nn.Identity()) or \
                         list(eval_model.shared_modules.parameters())[0].requires_grad:
 
-                    """for i in range(len(list(eval_pipe['Net'].module.shared_modules.parameters()))):
-                        p_eval = list(eval_pipe['Net'].module.shared_modules.parameters())[i]
-                        p_model = list(model["Net"].module.shared_modules.parameters())[i]
-                        print(p_model == p_eval)"""
+                    eval_pipe['Net'].initialize()
+                    eval_pipe['Net'].module.shared_modules = deepcopy(model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
 
-                    eval_clf = eval_pipe.fit(X[test[ix_eval]], y[test[ix_eval]])
-                    create_dataset.y = y[test[ix]]
-                    score = _score(eval_clf, X[test[ix]], y[test[ix]], scorer)
+                    t_start = time()
+                    eval_clf = deepcopy(eval_pipe).fit(X[train], y[train])
+                    duration = duration + time() - t_start
+
+                    create_dataset.y = y[train]
+                    score = _score(eval_clf, X[train], y[train], scorer)
+
+                    y_pred = eval_clf.predict(X[train])
+                    print("accuracy 0.5 : ", accuracy_score(y[train], y_pred))
 
                 else:
 
-                    eval_classifier.initialize()
-                    eval_classifier.module = deepcopy(model["Net"].module.shared_modules)
-                    eval_classifier.module_ = deepcopy(model["Net"].module.shared_modules)
+                    for p in list(model["Net"].module.shared_modules.parameters()):
+                        if p.requires_grad:
+                            p.requires_grad = False
 
-                    """for i in range(len(list(eval_classifier.module_.parameters()))):
-                        p_eval = list(eval_classifier.module_.parameters())[i]
-                        p_model = list(model["Net"].module_.shared_modules.parameters())[i]
-                        print('module_')
-                        print(p_model == p_eval)
-                        print('module')
-                        p_eval = list(eval_classifier.module_.parameters())[i]
-                        p_model = list(model["Net"].module_.shared_modules.parameters())[i]
-                        print(p_model == p_eval)"""
-
-                    for param in list(eval_classifier.module_.parameters()):
-                        param.requires_grad = False
-
-                    for param in list(eval_classifier.module.parameters()):
-                        param.requires_grad = False
+                    eval_pipe['Net'].initialize()
+                    eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
 
                     # TODO: Shuffle test
                     eval_classifier.classes_inferred_ = np.unique(to_numpy(y))
                     create_dataset.y = y[train]
-                    Xproc = create_dataset.transform(X[train], y[train])
-                    score = _score(eval_classifier, Xproc, y[train], scorer)
+                    #Xproc = create_dataset.transform(X[train], y[train])
+                    score = _score(eval_pipe, X[train], y[train], scorer)
 
                 wandb.run.summary['eval_score'] = score
                 wandb.finish()
@@ -190,7 +183,7 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
-            #break
+            break
 
 
 def active_wandb(args, config, subject, train=True):

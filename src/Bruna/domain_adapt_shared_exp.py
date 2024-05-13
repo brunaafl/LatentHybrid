@@ -3,11 +3,12 @@ Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 """
 
+import torchinfo
 import torch
+
 import numpy as np
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
-from moabb.evaluations import CrossSubjectEvaluation
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -16,7 +17,12 @@ from sklearn.base import clone
 from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from train import define_clf, init_model
+from shared_evaluation import SharedEvaluation
+from paradigm import MotorImagery_
+from hybrid_transform import HybridAggregateTransform
+from hybrid_model import SharedModel
+from hybrid_classifier import define_hybrid_clf
+from train import define_clf, init_model, define_clf_hybrid
 from util import parse_args, set_determinism, set_run_dir
 
 """
@@ -32,6 +38,7 @@ def main(args):
     """
     torch.set_num_threads(1)
     config = OmegaConf.load(args.config_file)
+    eval_config = OmegaConf.load(args.eval_config_file)
     # Setting run information
     set_determinism(seed=config.seed)
     # Set download dir
@@ -43,7 +50,7 @@ def main(args):
     # Define paradigm and datasets
     events = ["right_hand", "left_hand"]
 
-    paradigm = MotorImagery(events=events, n_classes=len(events))
+    paradigm = MotorImagery_(events=events, n_classes=len(events))
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -66,21 +73,37 @@ def main(args):
     input_window_samples = X.shape[2]
     runs = meta.run.values
     sessions = meta.session.values
+    subjects = meta.subject.values
     one_session = sessions == "session_T"
     one_run = runs == 'run_0'
     run_session = np.logical_and(one_session, one_run)
     len_run = sum(run_session * 1)
 
-    model = init_model(n_chans, n_classes, input_window_samples, config=config)
+    #model = init_model(n_chans, n_classes, input_window_samples, config=config)
+
+    model = SharedModel(
+        n_chans,
+        n_classes,
+        input_window_samples=input_window_samples,
+        config=config
+    )
+
     # Send model to GPU
     if cuda:
         model.cuda()
 
-    # Create Classifier
-    clf = define_clf(model, config)
+    #torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (len(subjects)), X[0].shape[1]))
 
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
-    create_dataset = TransformaParaWindowsDataset()
+    # Create Classifier
+    # TODO: Go back to define_clf after tests
+    clf = define_clf_hybrid(model, config, experiment_name=experiment_name)
+
+    # TODO: Uncomment these lines after testing the impact of the classifier
+    """create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
+    create_dataset = TransformaParaWindowsDataset()"""
+
+    create_dataset = HybridAggregateTransform()
+    create_dataset_with_align = HybridAggregateTransform(EA_len_run=len_run)
 
     pipes = {}
 
@@ -96,7 +119,7 @@ def main(args):
 
     # Define evaluation and train
     overwrite = False  # set to True if we want to overwrite cached results
-    evaluation = CrossSubjectEvaluation(
+    evaluation = SharedEvaluation(
         paradigm=paradigm,
         datasets=datasets,
         suffix=f"experiment_1_{args.dataset}",
@@ -104,6 +127,9 @@ def main(args):
         return_epochs=True,
         hdf5_path=run_dir,
         n_jobs=-1,
+        eval_config=eval_config,
+        len_run=len_run,
+        EA_in_eval=(args.ea == 'alignment'),
     )
 
     results = evaluation.process(pipes)

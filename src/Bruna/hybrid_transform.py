@@ -16,7 +16,7 @@ from dataset import split_runs_EA
 class HybridAggregateTransform(BaseEstimator, TransformerMixin):
     def __init__(self, EA_len_run=None, kw_args=None, shuffle=False):
         self.kw_args = kw_args
-        self.use_EA = EA_len_run != None
+        self.use_EA = EA_len_run is not None
         self.EA_len_run = EA_len_run
         self.n_trials_used = 0
         self.shuffle = shuffle
@@ -29,6 +29,7 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
         initial_time = time()
+        print(self.use_EA)
 
         # If EA is required
         if self.use_EA:
@@ -73,7 +74,6 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 
             # TODO: Shuffle data
             for subject in subjects:
-
                 trial.append(subjects[subject][trial_i][0])
                 target.append(subjects[subject][trial_i][1])
 

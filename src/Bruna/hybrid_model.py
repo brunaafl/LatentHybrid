@@ -10,6 +10,7 @@ from torch.nn import init
 from torch.nn.modules.lazy import LazyModuleMixin
 from torch.nn.parameter import UninitializedParameter
 
+
 class LazyLayerNorm(LazyModuleMixin, nn.LayerNorm):
     cls_to_become = nn.LayerNorm
 
@@ -39,7 +40,7 @@ def initmod(module):
     return module
 
 
-def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, start=0, end=19,  norm=nn.BatchNorm2d):
+def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, start=0, end=19, norm=nn.BatchNorm2d):
     temp_model = EEGNetv4(
         n_chans,
         n_classes,
@@ -90,7 +91,7 @@ def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0,
     return nn.Sequential(*net)
 
 
-def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn='False',):
+def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn='False', ):
     # Maybe? Does it make any sense?
     # Justification: if we are putting the lr of the eval lower, maybe it would make sense if the drop was lower to help fitting
     if start == 0 and end < 19:
@@ -225,6 +226,41 @@ class HybridModel(nn.Module):
         return SpecializedModel(new_layers, norm_clone, cloned_layers)
 
 
+class SharedModel(nn.Module):
+    def __init__(self, n_chans, n_classes, input_window_samples, config=None, freeze='freeze',
+                 args=None):
+        super(SharedModel, self).__init__()
+        self._args = (n_chans, n_classes, input_window_samples)
+        self.config = config
+        self.args = args
+        self.num_models = 8
+
+        temp_model = EEGNetv4(
+            n_chans,
+            n_classes,
+            input_window_samples=input_window_samples,
+            final_conv_length=config.model.final_conv_length,
+            drop_prob=config.model.drop_prob
+        )
+
+        self.shared_modules = temp_model
+
+    def split_input(self, X):
+        return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
+
+    def forward(self, x):
+        inputs = self.split_input(x)
+        out = []
+        for i, model_input in enumerate(inputs):
+            temp_shared = self.shared_modules(model_input)
+            out.append(temp_shared)
+        result = torch.stack(out)
+        if result.requires_grad:
+            result.retain_grad()
+
+        return result
+
+
 class SpecializedModel(nn.Module):
     def __init__(self, unique_modules, norm_clone, cloned_modules):
         super(SpecializedModel, self).__init__()
@@ -240,4 +276,3 @@ class SpecializedModel(nn.Module):
 
     def predict(self, X):
         return self.forward(X).argmax()
-

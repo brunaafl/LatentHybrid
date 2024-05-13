@@ -14,8 +14,8 @@ import wandb
 from hybrid_scoring import HybridScoring
 
 
+# Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):
-
     def get_loss(self, y_pred, y_true, *args, **kwargs):
 
         y_true = to_tensor(y_true, device=self.device)
@@ -110,5 +110,6 @@ def define_hybrid_clf(model, config, experiment_name):
                                  lower_is_better=False)] + scoring_callbacks,
         device=device,
         verbose=1,
+        warm_start=True,
     )
     return clf

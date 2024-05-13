@@ -37,8 +37,8 @@ from mne.epochs import BaseEpochs
 from train import define_clf
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from hybrid_model import active_wandb
 import wandb
+
 
 class SharedEvaluation(BaseEvaluation):
     def __init__(self, *args, eval_config=None, EA_in_eval=False, len_run=None, wandb_params=None, **kwargs):
@@ -100,10 +100,6 @@ class SharedEvaluation(BaseEvaluation):
                 t_start = time()
                 copyclf = deepcopy(clf)
                 subject_num += 1
-                train_run = active_wandb(*self.wandb_params, subject_num, train=True)
-                for callback in copyclf['Net'].callbacks:
-                    if isinstance(callback, WandbLogger):
-                        callback.wandb_run = wandb.run
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
                 wandb.finish()
@@ -124,7 +120,6 @@ class SharedEvaluation(BaseEvaluation):
                 ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
                                          test < (test[0] + model["Hybrid_adapter"].n_trials_used))
 
-                eval_run = active_wandb(self.wandb_params[0], self.eval_config, subject_num, train=False)
                 for callback in eval_classifier.callbacks:
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
