@@ -181,7 +181,7 @@ services:
               capabilities: [ gpu ]
 
   basic-shared-EA:
-    profiles: ["Basic-Shared-EA"]
+    profiles: ["Basic-Shared-EA", 'Sanity']
     extends:
       file: base.yml
       service: base-experiment
@@ -196,7 +196,7 @@ services:
               capabilities: [ gpu ]
 
   basic-shared-NoEA:
-    profiles: ["Basic-Shared-NoEA"]
+    profiles: ["Basic-Shared-NoEA", 'Sanity']
     extends:
       file: base.yml
       service: base-experiment
@@ -211,7 +211,7 @@ services:
               capabilities: [ gpu ]
 
   shared-EA-freeze:
-    profiles: ["Shared", "EA", "Freeze", "Shared-EA-Freeze"]
+    profiles: ["Shared", "EA", "Freeze", "Shared-EA-Freeze", 'Sanity']
     extends:
       file: base.yml
       service: base-experiment
@@ -241,7 +241,7 @@ services:
               capabilities: [ gpu ]
 
   shared-noEA-freeze:
-    profiles: ["Shared", "No-EA", "freeze", 'Shared-NoEA', 'Shared-NoEA-Freeze']
+    profiles: ["Shared", "No-EA", "freeze", 'Shared-NoEA', 'Shared-NoEA-Freeze', 'Sanity']
     extends:
       file: base.yml
       service: base-experiment

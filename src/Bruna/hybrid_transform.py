@@ -30,6 +30,7 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         initial_time = time()
         print(self.use_EA)
+        print(self.EA_len_run)
 
         # If EA is required
         if self.use_EA:

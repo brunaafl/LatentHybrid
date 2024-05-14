@@ -262,11 +262,12 @@ class SharedModel(nn.Module):
 
 
 class SpecializedModel(nn.Module):
-    def __init__(self, unique_modules, norm_clone, cloned_modules):
+    def __init__(self, unique_modules, norm_clone, cloned_modules, num_models=1):
         super(SpecializedModel, self).__init__()
         self.shared_modules = cloned_modules
         self.norm = norm_clone
         self.unique_modules = unique_modules
+        self.num_models = num_models
 
     def forward(self, x):
         x = self.unique_modules(x)

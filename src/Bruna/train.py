@@ -114,7 +114,6 @@ def define_clf_hybrid(model, config, warm_start=True, experiment_name=None):
     lr = config.train.lr
     patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(model.num_models)
 
     lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs)
 

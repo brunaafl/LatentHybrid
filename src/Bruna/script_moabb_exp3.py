@@ -3,27 +3,22 @@ Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 """
 
-import torchinfo
 import torch
-
 import numpy as np
+
+from omegaconf import OmegaConf
+
+from sklearn.pipeline import Pipeline
 
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
-
-from omegaconf import OmegaConf
-from sklearn.pipeline import Pipeline
-from sklearn.base import clone
 from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from shared_evaluation import SharedEvaluation
-from paradigm import MotorImagery_
-from hybrid_transform import HybridAggregateTransform
-from hybrid_model import SharedModel
-from hybrid_classifier import define_hybrid_clf
-from train import define_clf, init_model, define_clf_hybrid
+from evaluation import eval_exp3
+from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
+from sklearn.base import clone
 
 """
 For the joint model
@@ -36,9 +31,7 @@ def main(args):
     ----------
     args : object
     """
-    torch.set_num_threads(1)
     config = OmegaConf.load(args.config_file)
-    eval_config = OmegaConf.load(args.eval_config_file)
     # Setting run information
     set_determinism(seed=config.seed)
     # Set download dir
@@ -50,7 +43,7 @@ def main(args):
     # Define paradigm and datasets
     events = ["right_hand", "left_hand"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events))
+    paradigm = MotorImagery(events=events, n_classes=len(events))
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
@@ -62,9 +55,9 @@ def main(args):
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
-        paradigm = LeftRightImagery(resample=100.0)
+        paradigm = LeftRightImagery()
 
-    datasets = [dataset]
+    # datasets = [dataset]
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
@@ -73,37 +66,21 @@ def main(args):
     input_window_samples = X.shape[2]
     runs = meta.run.values
     sessions = meta.session.values
-    subjects = meta.subject.values
     one_session = sessions == "session_T"
     one_run = runs == 'run_0'
     run_session = np.logical_and(one_session, one_run)
     len_run = sum(run_session * 1)
 
-    #model = init_model(n_chans, n_classes, input_window_samples, config=config)
-
-    model = SharedModel(
-        n_chans,
-        n_classes,
-        input_window_samples=input_window_samples,
-        config=config
-    )
-
+    model = init_model(n_chans, n_classes, input_window_samples, config=config)
     # Send model to GPU
     if cuda:
         model.cuda()
 
-    #torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (len(subjects)), X[0].shape[1]))
-
     # Create Classifier
-    # TODO: Go back to define_clf after tests
-    clf = define_clf_hybrid(model, config, experiment_name=experiment_name)
+    clf = define_clf(model, config)
 
-    # TODO: Uncomment these lines after testing the impact of the classifier
-    """create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
-    create_dataset = TransformaParaWindowsDataset()"""
-
-    create_dataset = HybridAggregateTransform()
-    create_dataset_with_align = HybridAggregateTransform(EA_len_run=len_run)
+    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
+    create_dataset = TransformaParaWindowsDataset()
 
     pipes = {}
 
@@ -117,31 +94,15 @@ def main(args):
     else:
         pipes["EEGNetv4_Without_EA"] = pipe
 
-    # Define evaluation and train
-    overwrite = False  # set to True if we want to overwrite cached results
-    evaluation = SharedEvaluation(
-        paradigm=paradigm,
-        datasets=datasets,
-        suffix=f"experiment_1_{args.dataset}",
-        overwrite=overwrite,
-        return_epochs=True,
-        hdf5_path=run_dir,
-        n_jobs=-1,
-        eval_config=eval_config,
-        len_run=len_run,
-        EA_in_eval=(args.ea == 'alignment'),
-    )
-
-    results = evaluation.process(pipes)
+    # Evaluation for this experiment
+    results = eval_exp3(dataset, paradigm, pipes, run_dir, model, args.session, args.online)
+    # results = evaluation.process(pipes)
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/baseline_{experiment_name}_results.csv")
-
+    results.to_csv(f"{run_dir}/{experiment_name}_results.csv")
 
     print("---------------------------------------")
-
-    # return results
 
 
 # Press the green button in the gutter to run the script.
