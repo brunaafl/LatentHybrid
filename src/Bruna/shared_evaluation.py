@@ -85,10 +85,10 @@ class SharedEvaluation(BaseEvaluation):
                 # Separate len_run*2 trials for test
                 ix = test < (self.len_run * 2 + test[0])
 
-                """for p in list(model["Net"].module.shared_modules.parameters()):
+                for p in list(model["Net"].module.shared_modules.parameters()):
                     if p.requires_grad:
                         p.requires_grad = False
-                """
+
                 # Let's try another approach
                 # TODO: Remove after test
                 model["Net"].module.num_models = 1
@@ -99,23 +99,101 @@ class SharedEvaluation(BaseEvaluation):
                 else:
                     create_dataset = HybridAggregateTransform()
                 eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
+
                 ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
                                          test < (test[0] + len(test)))
-                for p in list(eval_pipe["Net"].module.shared_modules.parameters()):
-                    if p.requires_grad:
-                        p.requires_grad = False
-                model["Net"].module.shared_modules.requires_grad_(False)
+
                 eval_pipe['Net'].initialize()
                 eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
                 eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
                 eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
                 eval_pipe["Braindecode_dataset"].groups = groups[test[ix]]
                 eval_pipe["Braindecode_dataset"].info = X[test[ix]].info
-                print(X[test[ix]].get_data().shape)
-                print(len(y[test[ix]]))
+                score = _score(eval_pipe, X[test[ix]], y[test[ix]], scorer)
+
+                print(score)
+
+                nchan = (
+                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+                )
+                res = {
+                    "time": duration,
+                    "dataset": dataset,
+                    "subject": subject,
+                    "session": 'session_E',
+                    "fine-tuning": 'False',
+                    "score": score,
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "pipeline": name,
+                }
+
+                print(res)
+
+                yield res
+            #break
 
 
-                """eval_classifier = define_clf(deepcopy(model['Net'].module.shared_modules), self.eval_config, warm_start=True)
+class EEGSharedEvaluation(BaseEvaluation):
+    def __init__(self, *args, eval_config=None, EA_in_eval=False, len_run=None, wandb_params=None, **kwargs):
+        super(EEGSharedEvaluation, self).__init__(*args, **kwargs)
+        self.eval_config = eval_config
+        self.len_run = len_run
+        self.EA_in_eval = EA_in_eval
+
+    def is_valid(self, dataset):
+        return len(dataset.subject_list) > 1
+
+    def evaluate(self, dataset, pipelines, grid_search):
+
+        # Get data
+        init_time = time()
+        X, y, metadata = self.paradigm.get_data(dataset, return_epochs=self.return_epochs)
+        print(f"(1) Data got {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
+
+        # Encode labels
+        le = LabelEncoder()
+        y = y if self.mne_labels else le.fit_transform(y)
+        print(f"(2) Encoded {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
+
+        # Extract metadata
+        groups = metadata.subject.values
+        sessions = metadata.session.values
+        n_subjects = len(dataset.subject_list)
+
+        scorer = get_scorer(self.paradigm.scoring)
+
+        print(f"(3) Setup done {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
+
+        cv = LeaveOneGroupOut()
+
+        # Progressbar at subject level
+        subject_num = 0
+
+        for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject", ):
+            subject = groups[test[0]]
+
+            # now we can check if this subject has results
+            run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
+
+            # iterate over pipelines
+            for name, clf in run_pipes.items():
+
+                # Fit and update progress
+                t_start = time()
+                copyclf = deepcopy(clf)
+                model = copyclf.fit(X[train], y[train])
+                duration = time() - t_start
+
+                # Separate len_run*2 trials for test
+                ix = test < (self.len_run * 2 + test[0])
+
+                for p in list(model["Net"].module.shared_modules.parameters()):
+                    if p.requires_grad:
+                        p.requires_grad = False
+
+                eval_classifier = define_clf(deepcopy(model['Net'].module.shared_modules), self.eval_config,
+                                             warm_start=True)
                 if self.EA_in_eval:
                     create_dataset = TransformaParaWindowsDatasetEA(self.len_run)
                 else:
@@ -131,19 +209,11 @@ class SharedEvaluation(BaseEvaluation):
 
                 model["Net"].module.shared_modules.requires_grad_(False)
 
-                #print(eval_pipe)
-                #print(eval_pipe['Net'])
                 eval_pipe['Net'].initialize()
                 eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
                 eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
-                #print(eval_pipe['Net'])
-                # No fine-tuning
                 eval_pipe["Braindecode_dataset"].classes_inferred_ = np.unique(to_numpy(y))
-                #eval_pipe['Net'].module.num_models = 1
                 eval_pipe["Braindecode_dataset"].y = y[test[ix]]
-                print(X[test[ix]].get_data().shape)
-                print(len(y[test[ix]]))
-"""
 
                 score = _score(eval_pipe, X[test[ix]], y[test[ix]], scorer)
 
@@ -166,26 +236,5 @@ class SharedEvaluation(BaseEvaluation):
 
                 print(res)
 
-                # Fine-tuning
-                t_start = time()
-                eval_fit = deepcopy(eval_pipe).fit(X[test[ix_eval]], y[test[ix_eval]])
-                duration = duration + time() - t_start
-                create_dataset.y = y[test[ix]]
-                score = _score(eval_fit, X[test[ix]], y[test[ix]], scorer)
-
-                res = {
-                    "time": duration,
-                    "dataset": dataset,
-                    "subject": subject,
-                    "session": 'session_E',
-                    "fine-tuning": 'True',
-                    "score": score,
-                    "n_samples": len(train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                }
-
-                print(res)
-
                 yield res
-            break
+            #break
