@@ -85,7 +85,7 @@ def main(args):
     if cuda:
         model.cuda()
 
-    torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (len(subjects)), X[0].shape[1]))
+    #torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (len(subjects)), X[0].shape[1]))
 
     # Create Classifier
     clf = define_clf(model, config, warm_start=True)

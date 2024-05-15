@@ -188,12 +188,14 @@ class EEGSharedEvaluation(BaseEvaluation):
                 # Separate len_run*2 trials for test
                 ix = test < (self.len_run * 2 + test[0])
 
-                for p in list(model["Net"].module.shared_modules.parameters()):
+                for p in list(model["Net"].module.parameters()):
                     if p.requires_grad:
                         p.requires_grad = False
 
-                eval_classifier = define_clf(deepcopy(model['Net'].module.shared_modules), self.eval_config,
+                eval_classifier = define_clf(deepcopy(model['Net'].module), self.eval_config,
                                              warm_start=True)
+
+                print(model['Net'].module)
                 if self.EA_in_eval:
                     create_dataset = TransformaParaWindowsDatasetEA(self.len_run)
                 else:
@@ -207,11 +209,11 @@ class EEGSharedEvaluation(BaseEvaluation):
                     if p.requires_grad:
                         p.requires_grad = False
 
-                model["Net"].module.shared_modules.requires_grad_(False)
+                model["Net"].module.requires_grad_(False)
 
                 eval_pipe['Net'].initialize()
-                eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
-                eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
+                eval_pipe['Net'].module = deepcopy(model["Net"].module)
+                eval_pipe['Net'].module_ = deepcopy(model["Net"].module)
                 eval_pipe["Braindecode_dataset"].classes_inferred_ = np.unique(to_numpy(y))
                 eval_pipe["Braindecode_dataset"].y = y[test[ix]]
 
