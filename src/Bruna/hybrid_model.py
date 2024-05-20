@@ -203,11 +203,7 @@ class HybridModel(nn.Module):
         inputs = self.split_input(x)
         out = []
         for i, model_input in enumerate(inputs):
-            """print(len(model_input))
-            if i == 0:
-                print(model_input[0])"""
             temp_unique = self.unique_modules[i](model_input)
-            # pdb.set_trace()
             temp_norm = self.norm(temp_unique)
             temp_shared = self.shared_modules(temp_norm)
             out.append(temp_shared)
@@ -269,11 +265,25 @@ class SpecializedModel(nn.Module):
         self.unique_modules = unique_modules
         self.num_models = num_models
 
+    def split_input(self, X):
+        return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
+
     def forward(self, x):
-        x = self.unique_modules(x)
-        x = self.norm(x)
-        x = self.shared_modules(x)
-        return x
+        print(self.unique_modules)
+        inputs = self.split_input(x)
+        out = []
+        for i, model_input in enumerate(inputs):
+            print(i)
+            print(model_input.shape)
+            temp_unique = self.unique_modules(model_input)
+            print(temp_unique.shape)
+            temp_shared = self.shared_modules(temp_unique)
+            out.append(temp_shared)
+        result = torch.stack(out)
+        if result.requires_grad:
+            result.retain_grad()
+
+        return result
 
     def predict(self, X):
         return self.forward(X).argmax()

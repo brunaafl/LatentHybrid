@@ -29,8 +29,6 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
         initial_time = time()
-        print(self.use_EA)
-        print(self.EA_len_run)
 
         # If EA is required
         if self.use_EA:
@@ -41,19 +39,6 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
         subjects = {i: [] for i in np.unique(self.groups)}
         for index, trial in enumerate(X):
             subjects[self.groups[index]].append((trial, self.labels[index]))
-
-        """subjects = {}
-        for s in np.unique(self.groups):
-            subjects_s = X[self.groups == s]
-            y_s = self.labels[self.groups == s]
-
-            if self.shuffle:
-                torch.manual_seed(2342)
-                idx = torch.randperm(subjects_s.shape[0])
-                subjects_s = subjects_s[idx].view(subjects_s.size())
-                y_s = y_s[idx].view(y_s.size())
-
-            subjects[s] = (subjects_s, y_s)"""
 
         print(f"(2) Split {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
 

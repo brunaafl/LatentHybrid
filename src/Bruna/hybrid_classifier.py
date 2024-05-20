@@ -72,6 +72,7 @@ def define_hybrid_clf(model, config, experiment_name):
     Transform the pytorch model into classifier object to be used in the training
     Parameters
     ----------
+    experiment_name
     model: pytorch model
     config: dict with the configuration parameters
     Returns

@@ -55,7 +55,7 @@ def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None)
     return clf
 
 
-def define_clf(model, config, warm_start=False):
+def define_clf(model, config, warm_start=True):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
@@ -73,7 +73,6 @@ def define_clf(model, config, warm_start=False):
     lr = config.train.lr
     patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
 
     clf = EEGClassifier(
         model,
