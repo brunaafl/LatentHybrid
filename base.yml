@@ -4,6 +4,7 @@ services:
     image: hybrid_image:latest
     user: "${UID}:${GID}"
     tty: true
+    stdin_open: true
     volumes:
       - type: volume
         source: moabb-datasets

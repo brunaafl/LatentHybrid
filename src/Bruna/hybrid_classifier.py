@@ -18,6 +18,8 @@ from hybrid_scoring import HybridScoring
 class HybridClassifier(EEGClassifier):
     def get_loss(self, y_pred, y_true, *args, **kwargs):
 
+        #print(y_pred.shape)
+        #print(y_true.shape)
         y_true = to_tensor(y_true, device=self.device)
         losses = []
         for subject in range(y_pred.shape[0]):
@@ -38,7 +40,7 @@ def get_subject_acc_scorer(subject):
         y_preds = [z for z in out]
         subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
         true_slice = y_true[:, subject]
-        #print(y_preds)
+        print(y_preds)
         #print(subject_slice)
         #print(true_slice)
         predictions = np.argmax(subject_slice, axis=1)
@@ -52,7 +54,7 @@ def get_subject_loss_scorer(subject, criterion):
         out = model.forward_iter()
         y_preds = [z for z in out]
         true_slice = to_tensor(y_true[:, subject], device=model.device)
-        #print(y_preds)
+        print(y_preds)
         #print(true_slice)
         loss = criterion(y_preds[subject], true_slice)
         return loss
@@ -67,7 +69,7 @@ def average_acc_scoring(model, x, y_true):
     for subject in range(len(y_preds)):
         subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
         true_slice = y_true[:, subject]
-        #print(y_preds)
+        print(y_preds)
         #print(subject_slice)
         #print(true_slice)
         predictions = np.argmax(subject_slice, axis=1)

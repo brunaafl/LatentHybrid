@@ -211,8 +211,6 @@ class HybridModel(nn.Module):
         if result.requires_grad:
             result.retain_grad()
 
-        print(result)
-
         return result
 
     def generate_branch_model(self):
@@ -268,30 +266,29 @@ class SpecializedModel(nn.Module):
         self.num_models = num_models
 
     def split_input(self, X):
-        print(X.shape)
         return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
 
-    def forward(self, x):
-        #print(self.unique_modules)
+    """def forward(self, x):
         inputs = self.split_input(x)
         out = []
         for i, model_input in enumerate(inputs):
-            #print(i)
-            #print(model_input.shape)
             temp_unique = self.unique_modules(model_input)
-            #print(temp_unique.shape)
             temp_shared = self.shared_modules(temp_unique)
-            #print(temp_shared.shape)
             out.append(temp_shared)
         result = torch.stack(out)
         if result.requires_grad:
             result.retain_grad()
 
-        print(result)
+        print(result.shape)
 
-        return result
+        return result"""
+
+    def forward(self, x):
+        print(x.shape)
+        x = self.unique_modules(x)
+        print(x.shape)
+        x = self.shared_modules(x)
+        return x
 
     def predict(self, X):
-        print(X.shape)
-        print(self.forward(X).shape)
         return self.forward(X).argmax()
