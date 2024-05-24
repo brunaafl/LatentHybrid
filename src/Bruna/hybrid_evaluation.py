@@ -113,31 +113,18 @@ class HybridEvaluation(BaseEvaluation):
 
                 duration = time() - t_start
 
-                X_aux = X.get_data()
-
-                """torchinfo.summary(model["Net"].module.unique_modules[0],
-                                  input_size=(self.eval_config.train.batch_size, X_aux[0].shape[0], X_aux[0].shape[1]))
-                torchinfo.summary(model["Net"].module.shared_modules, input_size=(self.eval_config.train.batch_size,  16, 1, 251))"""
-
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
                 eval_model = model["Net"].module.generate_branch_model()
                 eval_model.num_models = 1
 
-                """torchinfo.summary(eval_model.unique_modules,
-                                  input_size=(self.eval_config.train.batch_size, X_aux[0].shape[0], X_aux[0].shape[1]))
-                torchinfo.summary(eval_model.shared_modules, input_size=(self.eval_config.train.batch_size,  16, 1, 251))"""
-
-                eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config, experiment_name='Evaluation')
-
-                #eval_classifier = define_clf(deepcopy(eval_model), self.eval_config, experiment_name='Evaluation')
+                eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
+                                                    experiment_name='Evaluation')
                 if self.EA_in_eval:
                     create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
-                    #create_dataset = TransformaParaWindowsDatasetEA(self.len_run)
                 else:
                     create_dataset = HybridAggregateTransform()
-                    #create_dataset = TransformaParaWindowsDataset()
                 eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
                 # Evaluation set
@@ -153,52 +140,24 @@ class HybridEvaluation(BaseEvaluation):
                 if type(eval_model.unique_modules) != type(nn.Identity()) or \
                         list(eval_model.shared_modules.parameters())[0].requires_grad:
 
-                    """eval_pipe['Net'].initialize()
+                    eval_pipe['Net'].initialize()
                     eval_pipe['Net'].module.shared_modules = deepcopy(model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)"""
+                    eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
 
                     t_start = time()
-                    """eval_clf = deepcopy(eval_pipe).fit(X[test[ix_eval]], None, Braindecode_dataset__labels=y[test[ix_eval]],
-                                                       Braindecode_dataset__subject_groups=groups[test[ix_eval]],
-                                                       Braindecode_dataset__info=X[test[ix_eval]].info)"""
-                    pdb.set_trace()
-                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix_eval]], y[test[ix_eval]])
+                    eval_clf = deepcopy(eval_pipe).fit(X[train], None, Braindecode_dataset__labels=y[train],
+                                                       Braindecode_dataset__subject_groups=groups[train],
+                                                       Braindecode_dataset__info=X[train].info)
                     duration = duration + time() - t_start
 
-                    print(X[test[ix_eval]].get_data().shape)
-                    print(X[test[ix]].get_data().shape)
-
-                    #eval_clf['Braindecode_dataset'].labels = y[test[ix_eval]]
-                    #eval_clf['Braindecode_dataset'].groups = groups[test[ix_eval]]
-                    #eval_clf['Braindecode_dataset'].info = X[test[ix_eval]].info
-
-                    hsua = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
-                    print('forward')
-                    print(eval_clf['Net'].forward(hsua).shape)
-                    #print(X[test[ix_eval]].get_data().shape)
-                    #print(X[test[ix_eval]].get_data().shape)
-                    #print(eval_clf.predict(X[test[ix_eval]]))
-                    #print(eval_clf.predict(X[test[ix_eval]]))
-
-                    #score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
+                    create_dataset.y = y[train]
+                    score = _score(eval_clf, X[train], y[train], scorer)
 
                 else:
 
-                    """eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
+                    eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
                     eval_pipe["Braindecode_dataset"].groups = groups[test[ix]]
-                    eval_pipe["Braindecode_dataset"].info = X[test[ix]].info"""
-
-                    print(model["Net"].module.shared_modules)
-
-                    print(eval_pipe["Net"].module.unique_modules)
-
-                    torchinfo.summary(eval_pipe['Net'].module,
-                                      input_size=(
-                                      self.eval_config.train.batch_size, X_aux[0].shape[0], X_aux[0].shape[1]))
-
-                    eval_pipe["Braindecode_dataset"].labels = y[train]
-                    eval_pipe["Braindecode_dataset"].groups = groups[train]
-                    eval_pipe["Braindecode_dataset"].info = X[train].info
+                    eval_pipe["Braindecode_dataset"].info = X[test[ix]].info
 
                     for p in list(model["Net"].module.shared_modules.parameters()):
                         if p.requires_grad:
@@ -208,20 +167,7 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
                     eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
 
-                    #eval_pipe['Braindecode_dataset'].y = y[train]
-                    """score = _score(eval_pipe, X[test[ix]], y[test[ix]], scorer)"""
-                    #pdb.set_trace()
-
-                    #eval_classifier.classes_inferred_ = np.unique(to_numpy(y))
-                    eval_pipe['Braindecode_dataset'].y = y[train]
-                    Xproc = create_dataset.transform(X[train], y[train])
-                    score = _score(eval_classifier, Xproc, y[train], scorer)
-
-                    print(eval_pipe.predict_proba(X[train]))
-                    print(X[train].get_data().shape)
-                    print(eval_pipe)
-                    score = _score(eval_pipe, X[train], y[train], scorer)
-                    print(score)
+                    score = _score(eval_pipe, X[test[ix]], y[test[ix]], scorer)
 
                 wandb.run.summary['eval_score'] = score
                 wandb.finish()
