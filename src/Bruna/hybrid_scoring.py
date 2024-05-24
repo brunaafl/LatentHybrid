@@ -9,6 +9,8 @@ class HybridScoring(EpochScoring):
     def on_epoch_begin(self, net, dataset_train, dataset_valid, **kwargs):
         self.y_preds_ = []
         self.y_trues_ = []
+        print('epoch begin')
+        #print(net.module.num_models)
         for subject_i in range(net.module.num_models):
             self.y_preds_.append([])
         self.tag = False
@@ -17,8 +19,10 @@ class HybridScoring(EpochScoring):
             self, net, batch, y_pred, training, **kwargs):
         if not self.use_caching or training != self.on_train:
             return
-
+        print('batch end')
         _X, y = unpack_data(batch)
+        #print(y_pred)
+        #print(y)
         self.y_trues_.append(y)
         for subject_i in range(net.module.num_models):
             self.y_preds_[subject_i].append(torch.select(y_pred, 0, subject_i))
@@ -30,7 +34,11 @@ class HybridScoring(EpochScoring):
             dataset_valid,
             **kwargs):
         X_test, y_test, y_pred = self.get_test_data(dataset_train, dataset_valid)
-
+        #print(dataset_train)
+        #print(dataset_valid)
+        print('epoch end')
+        #print(len(y_pred))
+        #print(len(y_test))
         unwrapped_y_pred = []
         for subject_i in range(net.module.num_models):
             unwrapped_y_pred.append(torch.vstack(y_pred[subject_i]))

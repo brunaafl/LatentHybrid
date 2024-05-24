@@ -55,7 +55,7 @@ def train(model, train_set, device, lr=0.0625 * 0.01, split=False, val_set=None)
     return clf
 
 
-def define_clf(model, config, warm_start=True):
+def define_clf(model, config, experiment_name, warm_start=True):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
@@ -74,6 +74,8 @@ def define_clf(model, config, warm_start=True):
     patience = config.train.patience
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    lrscheduler = LRScheduler(policy='CosineAnnealingLR', T_max=config.train.n_epochs)
+
     clf = EEGClassifier(
         model,
         criterion=torch.nn.NLLLoss,
@@ -88,7 +90,9 @@ def define_clf(model, config, warm_start=True):
                                 name='train_acc', lower_is_better=False),
                    EpochScoring(scoring='accuracy', on_train=False,
                                 name='valid_acc', lower_is_better=False),
-                   Checkpoint(monitor="valid_loss_best", load_best=True, dirname=f"/workspace/params/tempeval{random.randint(1,100000)}", f_params="params_{last_epoch[epoch]}.pt")],
+                   Checkpoint(monitor="valid_loss_best", load_best=True,
+                              dirname=f"/workspace/params/temptrain-{experiment_name}", f_params="params.pt"),
+                   lrscheduler],
         device=device,
         verbose=1,
         warm_start=warm_start,
@@ -129,14 +133,13 @@ def define_clf_hybrid(model, config, warm_start=True, experiment_name=None):
         batch_size=batch_size,
         max_epochs=config.train.n_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
-                   GradientNormClipping(gradient_clip_value=1),
+                   EpochScoring(scoring='accuracy', on_train=True,
+                                name='train_acc', lower_is_better=False),
+                   EpochScoring(scoring='accuracy', on_train=False,
+                                name='valid_acc', lower_is_better=False),
                    Checkpoint(monitor="valid_loss_best", load_best=True,
                               dirname=f"/workspace/params/temptrain-{experiment_name}", f_params="params.pt"),
-                   lrscheduler,
-                   HybridScoring(scoring=average_acc_scoring, on_train=True, name='avg_train_acc',
-                                 lower_is_better=False),
-                   HybridScoring(scoring=average_acc_scoring, on_train=False, name='avg_valid_acc',
-                                 lower_is_better=False)] + scoring_callbacks,
+                   lrscheduler],
         device=device,
         verbose=1,
         warm_start=warm_start)

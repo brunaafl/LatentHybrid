@@ -38,6 +38,9 @@ def get_subject_acc_scorer(subject):
         y_preds = [z for z in out]
         subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
         true_slice = y_true[:, subject]
+        #print(y_preds)
+        #print(subject_slice)
+        #print(true_slice)
         predictions = np.argmax(subject_slice, axis=1)
         return accuracy_score(true_slice, predictions)
 
@@ -49,6 +52,8 @@ def get_subject_loss_scorer(subject, criterion):
         out = model.forward_iter()
         y_preds = [z for z in out]
         true_slice = to_tensor(y_true[:, subject], device=model.device)
+        #print(y_preds)
+        #print(true_slice)
         loss = criterion(y_preds[subject], true_slice)
         return loss
 
@@ -62,6 +67,9 @@ def average_acc_scoring(model, x, y_true):
     for subject in range(len(y_preds)):
         subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
         true_slice = y_true[:, subject]
+        #print(y_preds)
+        #print(subject_slice)
+        #print(true_slice)
         predictions = np.argmax(subject_slice, axis=1)
         accuracies_per_subject.append(accuracy_score(true_slice, predictions))
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
@@ -104,11 +112,11 @@ def define_hybrid_clf(model, config, experiment_name):
                    WandbLogger(wandb.run),
                    Checkpoint(monitor="valid_loss_best", load_best=True,
                               dirname=f"/workspace/params/temptrain-{experiment_name}", f_params="params.pt"),
-                   lrscheduler,
                    HybridScoring(scoring=average_acc_scoring, on_train=True, name='avg_train_acc',
                                  lower_is_better=False),
                    HybridScoring(scoring=average_acc_scoring, on_train=False, name='avg_valid_acc',
-                                 lower_is_better=False)] + scoring_callbacks,
+                                 lower_is_better=False),
+                   lrscheduler,] + scoring_callbacks,
         device=device,
         verbose=1,
         warm_start=True,
