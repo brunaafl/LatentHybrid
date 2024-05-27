@@ -155,9 +155,9 @@ class HybridEvaluation(BaseEvaluation):
 
                 else:
 
-                    eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
-                    eval_pipe["Braindecode_dataset"].groups = groups[test[ix]]
-                    eval_pipe["Braindecode_dataset"].info = X[test[ix]].info
+                    eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
+                    eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                    eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
 
                     for p in list(model["Net"].module.shared_modules.parameters()):
                         if p.requires_grad:
@@ -167,7 +167,7 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
                     eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
 
-                    score = _score(eval_pipe, X[test[ix]], y[test[ix]], scorer)
+                    score = _score(eval_pipe, X[test[ix_eval]], y[test[ix_eval]], scorer)
 
                 wandb.run.summary['eval_score'] = score
                 wandb.finish()
@@ -189,7 +189,7 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
-            break
+            #break
 
 
 def active_wandb(args, config, subject, train=True):
