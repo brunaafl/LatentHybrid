@@ -151,6 +151,7 @@ class HybridEvaluation(BaseEvaluation):
                     duration = duration + time() - t_start
 
                     create_dataset.y = y[train]
+                    print(X[train].get_data().shape)
                     score = _score(eval_clf, X[train], y[train], scorer)
 
                 else:
@@ -163,6 +164,7 @@ class HybridEvaluation(BaseEvaluation):
                         if p.requires_grad:
                             p.requires_grad = False
 
+                    # self.initialized_ = True
                     eval_pipe['Net'].initialize()
                     eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
                     eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)

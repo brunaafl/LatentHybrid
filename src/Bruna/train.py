@@ -85,6 +85,7 @@ def define_clf(model, config, experiment_name, warm_start=True):
         optimizer__weight_decay=weight_decay,
         batch_size=batch_size,
         max_epochs=config.train.n_epochs,
+        # TODO: remove earlystopping and checkpint p teste
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
                    EpochScoring(scoring='accuracy', on_train=True,
                                 name='train_acc', lower_is_better=False),

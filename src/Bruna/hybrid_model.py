@@ -288,6 +288,7 @@ class SpecializedModel(nn.Module):
         x = self.unique_modules(x)
         print(x.shape)
         x = self.shared_modules(x)
+        print(x)
         return x
 
     def predict(self, X):
