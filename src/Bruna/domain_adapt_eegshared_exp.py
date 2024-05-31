@@ -88,7 +88,7 @@ def main(args):
     #torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (len(subjects)), X[0].shape[1]))
 
     # Create Classifier
-    clf = define_clf(model, config, warm_start=True)
+    clf = define_clf(model, config, warm_start=True, experiment_name='EEGClassifier')
 
     create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
     create_dataset = TransformaParaWindowsDataset()

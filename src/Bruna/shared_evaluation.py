@@ -193,7 +193,7 @@ class EEGSharedEvaluation(BaseEvaluation):
                         p.requires_grad = False
 
                 eval_classifier = define_clf(deepcopy(model['Net'].module), self.eval_config,
-                                             warm_start=True)
+                                             warm_start=True, experiment_name='EEGClassifier')
 
                 print(model['Net'].module)
                 if self.EA_in_eval:
