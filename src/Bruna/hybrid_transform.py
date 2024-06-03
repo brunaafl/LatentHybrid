@@ -62,7 +62,6 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
             for subject in subjects:
                 trial.append(subjects[subject][trial_i][0])
                 target.append(subjects[subject][trial_i][1])
-
             info = mne.create_info(ch_names=ch_names, sfreq=self.info["sfreq"])
             raw = mne.io.RawArray(np.vstack(trial) * 1e6, info)
             base_dataset = BaseDataset(raw, pd.Series({"target": np.array(target)}), target_name="target")

@@ -91,7 +91,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noEA-freeze-bn:
-    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN"]
+    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN-NoEA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -181,7 +181,7 @@ services:
               capabilities: [ gpu ]
 
   basic-shared-EA:
-    profiles: ["Basic-Shared-EA", 'Sanity']
+    profiles: ["Basic-Shared-EA", 'Sanity', 'Sanity-EA']
     extends:
       file: base.yml
       service: base-experiment

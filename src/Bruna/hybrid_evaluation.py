@@ -113,12 +113,20 @@ class HybridEvaluation(BaseEvaluation):
 
                 duration = time() - t_start
 
+                X_aux = X.get_data()
+
+                # Torchinfo added for tests
+                """torchinfo.summary(model["Net"].module.unique_modules[0],
+                                  input_size=(self.eval_config.train.batch_size, X_aux[0].shape[0], X_aux[0].shape[1]))
+                torchinfo.summary(model["Net"].module.shared_modules, input_size=(self.eval_config.train.batch_size,  16, 1, 251))"""
+
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
                 eval_model = model["Net"].module.generate_branch_model()
                 eval_model.num_models = 1
 
+                #
                 eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
                                                     experiment_name='Evaluation')
                 if self.EA_in_eval:
@@ -133,6 +141,11 @@ class HybridEvaluation(BaseEvaluation):
 
                 eval_run = active_wandb(self.wandb_params[0], self.eval_config, subject_num, train=False)
 
+                # Torchinfo added for test
+                """torchinfo.summary(eval_model.unique_modules,
+                                  input_size=(self.eval_config.train.batch_size, X_aux[0].shape[0], X_aux[0].shape[1]))
+                torchinfo.summary(eval_model.shared_modules, input_size=(self.eval_config.train.batch_size, 16, 1, 251))
+                """
                 for callback in eval_classifier.callbacks:
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
@@ -145,14 +158,15 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
 
                     t_start = time()
-                    eval_clf = deepcopy(eval_pipe).fit(X[train], None, Braindecode_dataset__labels=y[train],
-                                                       Braindecode_dataset__subject_groups=groups[train],
-                                                       Braindecode_dataset__info=X[train].info)
+                    print(X[test[ix_eval]].get_data().shape)
+                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix_eval]], None, Braindecode_dataset__labels=y[test[ix_eval]],
+                                                       Braindecode_dataset__subject_groups=groups[test[ix_eval]],
+                                                       Braindecode_dataset__info=X[test[ix_eval]].info)
                     duration = duration + time() - t_start
 
-                    create_dataset.y = y[train]
-                    print(X[train].get_data().shape)
-                    score = _score(eval_clf, X[train], y[train], scorer)
+                    #create_dataset.y = y[train]
+                    print(X[test[ix_eval]].get_data().shape)
+                    score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
 
                 else:
 
@@ -191,7 +205,7 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
-            #break
+            break
 
 
 def active_wandb(args, config, subject, train=True):
