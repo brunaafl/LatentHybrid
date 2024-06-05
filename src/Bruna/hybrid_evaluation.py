@@ -158,15 +158,21 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
 
                     t_start = time()
-                    print(X[test[ix_eval]].get_data().shape)
-                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix_eval]], None, Braindecode_dataset__labels=y[test[ix_eval]],
-                                                       Braindecode_dataset__subject_groups=groups[test[ix_eval]],
-                                                       Braindecode_dataset__info=X[test[ix_eval]].info)
+                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
+                                                       Braindecode_dataset__labels=y[test[ix]],
+                                                       Braindecode_dataset__subject_groups=groups[test[ix]],
+                                                       Braindecode_dataset__info=X[test[ix]].info)
                     duration = duration + time() - t_start
 
-                    #create_dataset.y = y[train]
-                    print(X[test[ix_eval]].get_data().shape)
-                    score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
+                    eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
+                    eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                    eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
+                    X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
+
+                    y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                    score = accuracy_score(y[test[ix_eval]], y_pred)
+
+                    #score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
 
                 else:
 
@@ -205,7 +211,7 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
-            break
+            #break
 
 
 def active_wandb(args, config, subject, train=True):
