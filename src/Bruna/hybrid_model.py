@@ -94,6 +94,8 @@ def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0,
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn='False', ):
     # Maybe? Does it make any sense?
     # Justification: if we are putting the lr of the eval lower, maybe it would make sense if the drop was lower to help fitting
+
+    # TODO: Test removing lowering dropout
     if start == 0 and end < 19:
         drop_prob = config.model.drop_prob * 0.9
     else:

@@ -211,7 +211,7 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
-            #break
+            break
 
 
 def active_wandb(args, config, subject, train=True):

@@ -61,7 +61,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-nofreeze-nobn:
-    profiles: ["Hybrid", "EA", "No-freeze", "NoBN", "Hybrid-NoBN"]
+    profiles: ["Hybrid", "EA", "No-freeze", "NoBN", "Hybrid-NoBN", "Hybrid-NoBN-NoFreeze"]
     extends:
       file: base.yml
       service: base-experiment
