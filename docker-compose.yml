@@ -226,7 +226,7 @@ services:
               capabilities: [ gpu ]
 
   shared-EA-nofreeze:
-    profiles: ["Shared", "EA", "No-freeze", 'Shared-EA-NoFreeze']
+    profiles: ["Shared", "EA", "No-freeze", 'Shared-NoFreeze']
     extends:
       file: base.yml
       service: base-experiment
@@ -256,7 +256,7 @@ services:
               capabilities: [ gpu ]
 
   shared-noEA-nofreeze:
-    profiles: ["Shared", "No-EA", "No-freeze", 'Shared-NoEA-NoFreeze']
+    profiles: ["Shared", "No-EA", "No-freeze", 'Shared-NoFreeze']
     extends:
       file: base.yml
       service: base-experiment
