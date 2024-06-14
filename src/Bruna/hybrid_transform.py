@@ -33,6 +33,8 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
         # If EA is required
         if self.use_EA:
             X = split_runs_EA(X.get_data(), self.EA_len_run)
+        else:
+            X = X.get_data() * 1e6
         print(f"(1) EA {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
 
         # Create dict mapping each individual to their labeled trials
@@ -63,7 +65,7 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
                 trial.append(subjects[subject][trial_i][0])
                 target.append(subjects[subject][trial_i][1])
             info = mne.create_info(ch_names=ch_names, sfreq=self.info["sfreq"])
-            raw = mne.io.RawArray(np.vstack(trial) * 1e6, info)
+            raw = mne.io.RawArray(np.vstack(trial), info)
             base_dataset = BaseDataset(raw, pd.Series({"target": np.array(target)}), target_name="target")
             new_trials.append(base_dataset)
 

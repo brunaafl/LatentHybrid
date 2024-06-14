@@ -91,9 +91,9 @@ def main(args):
     model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config,
                         freeze=args.freeze, args=args)
     # Send model to GPU
+
     if cuda:
         model.cuda()
-
     torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
 
     # Create Classifier

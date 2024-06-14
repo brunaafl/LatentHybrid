@@ -28,9 +28,6 @@ from mne.epochs import BaseEpochs
 
 from hybrid_transform import HybridAggregateTransform
 from hybrid_classifier import define_hybrid_clf
-from train import define_clf, define_clf_hybrid
-
-from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 
 import wandb
 
@@ -107,18 +104,12 @@ class HybridEvaluation(BaseEvaluation):
                         callback.wandb_run = wandb.run
 
                 # Fit
+                #pdb.set_trace()
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
                 wandb.finish()
 
                 duration = time() - t_start
-
-                X_aux = X.get_data()
-
-                # Torchinfo added for tests
-                """torchinfo.summary(model["Net"].module.unique_modules[0],
-                                  input_size=(self.eval_config.train.batch_size, X_aux[0].shape[0], X_aux[0].shape[1]))
-                torchinfo.summary(model["Net"].module.shared_modules, input_size=(self.eval_config.train.batch_size,  16, 1, 251))"""
 
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
@@ -141,11 +132,6 @@ class HybridEvaluation(BaseEvaluation):
 
                 eval_run = active_wandb(self.wandb_params[0], self.eval_config, subject_num, train=False)
 
-                # Torchinfo added for test
-                """torchinfo.summary(eval_model.unique_modules,
-                                  input_size=(self.eval_config.train.batch_size, X_aux[0].shape[0], X_aux[0].shape[1]))
-                torchinfo.summary(eval_model.shared_modules, input_size=(self.eval_config.train.batch_size, 16, 1, 251))
-                """
                 for callback in eval_classifier.callbacks:
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
@@ -171,8 +157,6 @@ class HybridEvaluation(BaseEvaluation):
 
                     y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
                     score = accuracy_score(y[test[ix_eval]], y_pred)
-
-                    #score = _score(eval_clf, X[test[ix_eval]], y[test[ix_eval]], scorer)
 
                 else:
 
