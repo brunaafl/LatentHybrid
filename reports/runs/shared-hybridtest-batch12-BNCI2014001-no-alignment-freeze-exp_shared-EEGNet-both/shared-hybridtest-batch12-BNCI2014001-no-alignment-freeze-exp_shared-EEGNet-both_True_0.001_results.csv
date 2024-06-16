@@ -1,0 +1,2 @@
+,score,time,samples,subject,session,channels,n_sessions,dataset,pipeline
+0,0.7625,2073.3684,2304.0,1,session_E,22,2,001-2014,EEGNet|_Without_EA-Frozen
