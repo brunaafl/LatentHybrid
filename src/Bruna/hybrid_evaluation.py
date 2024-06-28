@@ -115,13 +115,9 @@ class HybridEvaluation(BaseEvaluation):
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
-                subjects_list = list(np.unique(groups))
-
-                subjects_list.remove(subject)
-
                 copy_model = deepcopy(model)
 
-                for subj in subjects_list:
+                for subj in range(copy_model['Net'].module.num_models):
 
                     eval_model = copy_model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
@@ -203,9 +199,8 @@ class HybridEvaluation(BaseEvaluation):
                     }
 
                     print(res)
-
                     yield res
-                break
+            #break
 
 
 def active_wandb(args, config, subject, train=True):
