@@ -35,7 +35,8 @@ import wandb
 class HybridEvaluation(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, wandb_params=None,
                  **kwargs):
-        super(HybridEvaluation, self).__init__(*args, **kwargs)
+        add_cols = ["head"]
+        super(HybridEvaluation, self).__init__(additional_columns=add_cols, *args, **kwargs)
         self.eval_config = eval_config
         self.EA_in_eval = EA_in_eval
         self.len_run = len_run
@@ -114,88 +115,97 @@ class HybridEvaluation(BaseEvaluation):
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
-                eval_model = model["Net"].module.generate_branch_model()
-                eval_model.num_models = 1
+                subjects_list = list(np.unique(groups))
 
-                #
-                eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
-                                                    experiment_name='Evaluation')
-                if self.EA_in_eval:
-                    create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
-                else:
-                    create_dataset = HybridAggregateTransform()
-                eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
+                subjects_list.remove(subject)
 
-                # Evaluation set
-                ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
-                                         test < (test[0] + model["Hybrid_adapter"].n_trials_used))
+                copy_model = deepcopy(model)
 
-                eval_run = active_wandb(self.wandb_params[0], self.eval_config, subject_num, train=False)
+                for subj in subjects_list:
 
-                for callback in eval_classifier.callbacks:
-                    if isinstance(callback, WandbLogger):
-                        callback.wandb_run = wandb.run
+                    eval_model = copy_model["Net"].module.generate_branch_model(subj)
+                    eval_model.num_models = 1
 
-                if type(eval_model.unique_modules) != type(nn.Identity()) or \
-                        list(eval_model.shared_modules.parameters())[0].requires_grad:
+                    copy_eva_model = deepcopy(eval_model)
+                    eval_classifier = define_hybrid_clf(copy_eva_model, self.eval_config,
+                                                        experiment_name='Evaluation')
+                    if self.EA_in_eval:
+                        create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
+                    else:
+                        create_dataset = HybridAggregateTransform()
+                    eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
-                    eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module.shared_modules = deepcopy(model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
+                    # Evaluation set
+                    ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
+                                             test < (test[0] + copy_model["Hybrid_adapter"].n_trials_used))
 
-                    t_start = time()
-                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
-                                                       Braindecode_dataset__labels=y[test[ix]],
-                                                       Braindecode_dataset__subject_groups=groups[test[ix]],
-                                                       Braindecode_dataset__info=X[test[ix]].info)
-                    duration = duration + time() - t_start
+                    eval_run = active_wandb_eval(self.wandb_params[0], self.eval_config, subject_num, subj, train=False)
 
-                    eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
-                    eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
-                    eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
-                    X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
+                    for callback in eval_classifier.callbacks:
+                        if isinstance(callback, WandbLogger):
+                            callback.wandb_run = wandb.run
 
-                    y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
-                    score = accuracy_score(y[test[ix_eval]], y_pred)
+                    if type(eval_model.unique_modules) != type(nn.Identity()) or \
+                            list(eval_model.shared_modules.parameters())[0].requires_grad:
 
-                else:
+                        eval_pipe['Net'].initialize()
+                        eval_pipe['Net'].module.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
+                        eval_pipe['Net'].module_.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
 
-                    eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
-                    eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
-                    eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
+                        t_start = time()
+                        eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
+                                                           Braindecode_dataset__labels=y[test[ix]],
+                                                           Braindecode_dataset__subject_groups=groups[test[ix]],
+                                                           Braindecode_dataset__info=X[test[ix]].info)
+                        duration = duration + time() - t_start
 
-                    for p in list(model["Net"].module.shared_modules.parameters()):
-                        if p.requires_grad:
-                            p.requires_grad = False
+                        eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
+                        eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                        eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
+                        X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
 
-                    # self.initialized_ = True
-                    eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
+                        y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                        score = accuracy_score(y[test[ix_eval]], y_pred)
 
-                    score = _score(eval_pipe, X[test[ix_eval]], y[test[ix_eval]], scorer)
+                    else:
 
-                wandb.run.summary['eval_score'] = score
-                wandb.finish()
+                        eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
+                        eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                        eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
 
-                nchan = (
-                    X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-                )
-                res = {
-                    "time": duration,
-                    "dataset": dataset,
-                    "subject": subject,
-                    "session": 'session_E',
-                    "score": score,
-                    "n_samples": len(train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                }
+                        for p in list(model["Net"].module.shared_modules.parameters()):
+                            if p.requires_grad:
+                                p.requires_grad = False
 
-                print(res)
+                        # self.initialized_ = True
+                        eval_pipe['Net'].initialize()
+                        eval_pipe['Net'].module = deepcopy(copy_model["Net"].module.shared_modules)
+                        eval_pipe['Net'].module_ = deepcopy(copy_model["Net"].module.shared_modules)
 
-                yield res
-            break
+                        score = _score(eval_pipe, X[test[ix_eval]], y[test[ix_eval]], scorer)
+
+                    wandb.run.summary['eval_score'] = score
+                    wandb.finish()
+
+                    nchan = (
+                        X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+                    )
+                    res = {
+                        "time": duration,
+                        "dataset": dataset,
+                        "head": subj,
+                        "subject": subject,
+                        "session": 'session_E',
+                        "score": score,
+                        "n_samples": len(train),
+                        "n_channels": nchan,
+                        "pipeline": name,
+                    }
+
+                    print(res)
+
+                    yield res
+                break
 
 
 def active_wandb(args, config, subject, train=True):
@@ -221,6 +231,35 @@ def active_wandb(args, config, subject, train=True):
         project=f"{args.model}",
         group=config.train.experiment_name,
         name=f"{subject}-Shared:{args.sharednorm}-Unique:{args.uniquenorm}",
+        config=wconfig
+    )
+    return run
+
+
+def active_wandb_eval(args, config, subject, subj, train=True):
+    wconfig = {
+        "batch_size": config.train.batch_size,
+        "exp_name": config.train.experiment_name,
+        "model_type": args.model,
+        "dataset": args.dataset,
+        "freeze": args.freeze,
+        "alignment": args.ea,
+        "dropout": config.model.drop_prob,
+        "lr": config.train.lr,
+        "patience": config.train.patience,
+        "n_epochs": config.train.n_epochs,
+        "weight_decay": config.train.weight_decay,
+        "head": subj,
+        "subject": subject,
+        "train": train,
+        "uniquenorm": args.uniquenorm,
+        "sharednorm": args.sharednorm,
+    }
+
+    run = wandb.init(
+        project=f"{args.model}",
+        group=config.train.experiment_name,
+        name=f"{subject}-Head-{subj}:{args.sharednorm}-Unique:{args.uniquenorm}",
         config=wconfig
     )
     return run
