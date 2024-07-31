@@ -35,7 +35,7 @@ import wandb
 class HybridEvaluation(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, wandb_params=None,
                  **kwargs):
-        add_cols = ["head"]
+        add_cols = ["head", "score_nofit"]
         super(HybridEvaluation, self).__init__(additional_columns=add_cols, *args, **kwargs)
         self.eval_config = eval_config
         self.EA_in_eval = EA_in_eval
@@ -83,6 +83,11 @@ class HybridEvaluation(BaseEvaluation):
         print(f"(3) Setup done {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
         cv = LeaveOneGroupOut()
+
+        # Get number of channels
+        nchan = (
+            X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+        )
 
         # Progressbar at subject level
         subject_num = 0
@@ -141,57 +146,56 @@ class HybridEvaluation(BaseEvaluation):
                         if isinstance(callback, WandbLogger):
                             callback.wandb_run = wandb.run
 
-                    if type(eval_model.unique_modules) != type(nn.Identity()) or \
-                            list(eval_model.shared_modules.parameters())[0].requires_grad:
+                    # Inference part
 
-                        eval_pipe['Net'].initialize()
-                        eval_pipe['Net'].module.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
-                        eval_pipe['Net'].module_.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
+                    # First, test the model without the second fit
 
-                        t_start = time()
-                        eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
-                                                           Braindecode_dataset__labels=y[test[ix]],
-                                                           Braindecode_dataset__subject_groups=groups[test[ix]],
-                                                           Braindecode_dataset__info=X[test[ix]].info)
-                        duration = duration + time() - t_start
+                    # Just to ensure that the modules are being correctly copied
+                    eval_pipe['Net'].initialize()
+                    eval_pipe['Net'].module.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module_.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
+                    eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
 
-                        eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
-                        eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
-                        eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
-                        X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
+                    eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
+                    eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                    eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
+                    X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
 
-                        y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
-                        score = accuracy_score(y[test[ix_eval]], y_pred)
+                    # Fix dimension and predict
+                    y_pred = eval_pipe['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                    # Compute accuracy
+                    score_nofit = accuracy_score(y[test[ix_eval]], y_pred)
 
-                    else:
+                    # Execute the second fit - fine-tuning
 
-                        eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
-                        eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
-                        eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
+                    t_start = time()
+                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
+                                                       Braindecode_dataset__labels=y[test[ix]],
+                                                       Braindecode_dataset__subject_groups=groups[test[ix]],
+                                                       Braindecode_dataset__info=X[test[ix]].info)
+                    duration = duration + time() - t_start
 
-                        for p in list(model["Net"].module.shared_modules.parameters()):
-                            if p.requires_grad:
-                                p.requires_grad = False
+                    """eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
+                    eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                    eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
+                    X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
+                    """
 
-                        # self.initialized_ = True
-                        eval_pipe['Net'].initialize()
-                        eval_pipe['Net'].module = deepcopy(copy_model["Net"].module.shared_modules)
-                        eval_pipe['Net'].module_ = deepcopy(copy_model["Net"].module.shared_modules)
-
-                        score = _score(eval_pipe, X[test[ix_eval]], y[test[ix_eval]], scorer)
+                    # Predict
+                    y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                    score = accuracy_score(y[test[ix_eval]], y_pred)
 
                     wandb.run.summary['eval_score'] = score
                     wandb.finish()
 
-                    nchan = (
-                        X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
-                    )
                     res = {
                         "time": duration,
                         "dataset": dataset,
                         "head": subj,
                         "subject": subject,
                         "session": 'session_E',
+                        "score_nofit": score_nofit,
                         "score": score,
                         "n_samples": len(train),
                         "n_channels": nchan,
