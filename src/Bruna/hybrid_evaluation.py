@@ -33,15 +33,16 @@ import wandb
 
 
 class HybridEvaluation(BaseEvaluation):
-    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, wandb_params=None,
+    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,
                  **kwargs):
-        add_cols = ["head", "score_nofit"]
+        add_cols = ["head"]
         super(HybridEvaluation, self).__init__(additional_columns=add_cols, *args, **kwargs)
         self.eval_config = eval_config
         self.EA_in_eval = EA_in_eval
         self.len_run = len_run
         self.wandb_params = wandb_params
         self.run_dir = run_dir
+        self.mode = mode
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
@@ -157,37 +158,41 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
                     eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
 
-                    eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
-                    eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
-                    eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
-                    X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
+                    if self.mode == 'Inference:':
 
-                    # Fix dimension and predict
-                    y_pred = eval_pipe['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
-                    # Compute accuracy
-                    score_nofit = accuracy_score(y[test[ix_eval]], y_pred)
+                        eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
+                        eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                        eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
+                        X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
 
-                    # Execute the second fit - fine-tuning
+                        # Fix dimension and predict
+                        y_pred = eval_pipe['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                        # Compute accuracy
+                        score = accuracy_score(y[test[ix_eval]], y_pred)
+                        print(score)
 
-                    t_start = time()
-                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
-                                                       Braindecode_dataset__labels=y[test[ix]],
-                                                       Braindecode_dataset__subject_groups=groups[test[ix]],
-                                                       Braindecode_dataset__info=X[test[ix]].info)
-                    duration = duration + time() - t_start
+                    else:
 
-                    """eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
-                    eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
-                    eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
-                    X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
-                    """
+                        # Execute the second fit - fine-tuning
+                        t_start = time()
+                        eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
+                                                           Braindecode_dataset__labels=y[test[ix]],
+                                                           Braindecode_dataset__subject_groups=groups[test[ix]],
+                                                           Braindecode_dataset__info=X[test[ix]].info)
+                        duration = duration + time() - t_start
 
-                    # Predict
-                    y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
-                    score = accuracy_score(y[test[ix_eval]], y_pred)
+                        eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
+                        eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                        eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
+                        X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
 
-                    wandb.run.summary['eval_score'] = score
-                    wandb.finish()
+
+                        # Predict
+                        y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                        score = accuracy_score(y[test[ix_eval]], y_pred)
+
+                        wandb.run.summary['eval_score'] = score
+                        wandb.finish()
 
                     res = {
                         "time": duration,
@@ -195,7 +200,6 @@ class HybridEvaluation(BaseEvaluation):
                         "head": subj,
                         "subject": subject,
                         "session": 'session_E',
-                        "score_nofit": score_nofit,
                         "score": score,
                         "n_samples": len(train),
                         "n_channels": nchan,

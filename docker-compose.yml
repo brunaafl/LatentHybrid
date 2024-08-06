@@ -15,6 +15,21 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+  hybrid-EA-freeze-bn-inf:
+    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-freeze-bn-inference
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
   hybrid-EA-freeze-nobn:
     profiles: ["Hybrid", "EA", "Freeze", "NoBN", "Hybrid-NoBN", "Hybrid-NoBN-EA"]
     extends:
@@ -46,7 +61,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-nofreeze-bn:
-    profiles: ["Hybrid", "EA", "No-freeze", "BN", "Hybrid-BN"]
+    profiles: ["Hybrid", "EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze"]
     extends:
       file: base.yml
       service: base-experiment
@@ -105,6 +120,21 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+  hybrid-noEA-freeze-bn-inf:
+    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-freeze-bn-inference
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
   hybrid-noEA-freeze-nobn:
     profiles: ["Hybrid", "No-EA", "freeze", "NoBN", "Hybrid-NoBN", "Hybrid-NoBN-NoEA"]
     extends:
@@ -136,7 +166,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noEA-nofreeze-bn:
-    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN", "Hybrid-BN-noEA", ]
+    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze", "Hybrid-BN-noEA", ]
     extends:
       file: base.yml
       service: base-experiment

@@ -202,6 +202,14 @@ def parse_args():
         choices=["Identity", "BatchNorm2d", "InstanceNorm2d", "LayerNorm"],
     )
 
+    parser.add_argument(
+        "--mode",
+        type=str,
+        help="select mode of the evaluation",
+        default="Fit",
+        choices=["Fit", "Inference"],
+    )
+
         
     args = parser.parse_args()
     return args
