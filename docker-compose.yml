@@ -16,7 +16,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-freeze-bn-inf:
-    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN-EA-Inf"]
     extends:
       file: base.yml
       service: base-experiment
@@ -31,7 +31,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-freeze-bn-choosehead:
-    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN-Choose", "Hybrid-BN-EA"]
+    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN-Choose-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -77,7 +77,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-nofreeze-bn:
-    profiles: ["Hybrid", "EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze"]
+    profiles: ["Hybrid", "EA", "No-freeze", "BN", "Hybrid-BN"]
     extends:
       file: base.yml
       service: base-experiment
@@ -92,7 +92,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-nofreeze-bn-choosehead:
-    profiles: ["Hybrid", "EA", "No-freeze", "BN", "Hybrid-BN-Choose"]
+    profiles: ["Hybrid", "EA", "No-freeze", "BN", "Hybrid-BN-Choose-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -152,8 +152,9 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+
   hybrid-noEA-freeze-bn-inf:
-    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN"]
+    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN-Inf"]
     extends:
       file: base.yml
       service: base-experiment
@@ -214,7 +215,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noEA-nofreeze-bn:
-    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze", "Hybrid-BN-noEA", ]
+    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze", "Hybrid-BN", ]
     extends:
       file: base.yml
       service: base-experiment
