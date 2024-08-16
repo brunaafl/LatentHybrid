@@ -130,7 +130,7 @@ def main(args):
     eval_config.train.experiment_name = config.train.experiment_name
 
     # Define evaluation and train
-    overwrite = False  # set to True if we want to overwrite cached results
+    overwrite = True  # set to True if we want to overwrite cached results
     evaluation = HybridEvaluation(
         paradigm=paradigm,
         datasets=datasets,
@@ -155,7 +155,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    #results.to_csv(f"{run_dir}/Heads-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/Heads-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
     
     print("---------------------------------------")
 
