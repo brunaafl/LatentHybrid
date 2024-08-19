@@ -32,6 +32,7 @@ from hybrid_classifier import define_hybrid_clf
 import wandb
 
 
+
 class HybridEvaluation(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,
                  **kwargs):
@@ -94,13 +95,12 @@ class HybridEvaluation(BaseEvaluation):
         subject_num = 0
         for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject", ):
             subject = groups[test[0]]
-            print(subject)
 
             # now we can check if this subject has results
-            #run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
+            run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
 
             # iterate over pipelines
-            for name, clf in pipelines.items():
+            for name, clf in run_pipes.items():
 
                 # Start wandb monitoring
                 t_start = time()
@@ -125,9 +125,8 @@ class HybridEvaluation(BaseEvaluation):
                 copy_model = deepcopy(model)
 
                 for subj in range(copy_model['Net'].module.num_models):
-                    print(subj)
 
-                    eval_model = copy_model["Net"].module.generate_branch_model(subj)
+                    eval_model = model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
 
                     copy_eva_model = deepcopy(eval_model)
@@ -155,12 +154,12 @@ class HybridEvaluation(BaseEvaluation):
 
                     # Just to ensure that the modules are being correctly copied
                     eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
-                    eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
-                    eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
-                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)
+                    eval_pipe['Net'].module.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module_.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
+                    eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
 
-                    if self.mode == 'Inference':
+                    if self.mode == 'Inference:':
 
                         eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
@@ -177,7 +176,7 @@ class HybridEvaluation(BaseEvaluation):
 
                         # Execute the second fit - fine-tuning
                         t_start = time()
-                        eval_clf = eval_pipe.fit(X[test[ix]], None,
+                        eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
                                                            Braindecode_dataset__labels=y[test[ix]],
                                                            Braindecode_dataset__subject_groups=groups[test[ix]],
                                                            Braindecode_dataset__info=X[test[ix]].info)
@@ -187,6 +186,7 @@ class HybridEvaluation(BaseEvaluation):
                         eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
                         X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
+
 
                         # Predict
                         y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
@@ -210,6 +210,7 @@ class HybridEvaluation(BaseEvaluation):
                     print(res)
                     yield res
             #break
+
 
 
 class HybridChooseHead(BaseEvaluation):

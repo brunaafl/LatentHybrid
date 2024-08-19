@@ -275,7 +275,6 @@ class SpecializedModel(nn.Module):
         inputs = self.split_input(x)
         out = []
         for i, model_input in enumerate(inputs):
-
             temp_unique = self.unique_modules(model_input)
             temp_shared = self.shared_modules(temp_unique)
 
@@ -287,7 +286,7 @@ class SpecializedModel(nn.Module):
         return result
 
     """def forward(self, x):
-        
+
         print(x.shape)
         x = self.unique_modules(x)
         print(x.shape)

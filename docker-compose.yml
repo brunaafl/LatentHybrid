@@ -327,7 +327,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: basic-shared-noea
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml "
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config.yaml "
     deploy:
       resources:
         reservations:
@@ -336,13 +336,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  shared-EA-freeze:
-    profiles: ["Shared", "EA", "Freeze", "Shared-EA-Freeze"]
+  shared-EA-freeze-old:
+    profiles: ["Shared", "EA", "Freeze", "Shared-EA-Old"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: shared-ea-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml "
+    container_name: shared-ea-freeze-old
+    command: "python src/Bruna/domain_adapt_exp1_old.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config.yaml "
     deploy:
       resources:
         reservations:
@@ -366,20 +366,6 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  shared-noEA-freeze:
-    profiles: ["Shared", "No-EA", "freeze", 'Shared-NoEA', 'Shared-NoEA-Freeze']
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: shared-noea-freeze
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
 
   shared-noEA-nofreeze:
     profiles: ["Shared", "No-EA", "No-freeze", 'Shared-NoFreeze']

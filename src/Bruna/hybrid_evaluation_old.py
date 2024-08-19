@@ -1,4 +1,5 @@
 from torch import nn
+import pdb
 
 from skorch.callbacks import WandbLogger
 from skorch.utils import to_numpy
@@ -13,6 +14,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import get_scorer, accuracy_score
 
 from sklearn.pipeline import Pipeline
+from torchinfo import torchinfo
 
 from tqdm import tqdm
 
@@ -24,9 +26,8 @@ from copy import deepcopy
 
 from mne.epochs import BaseEpochs
 
-from train import define_clf
-
-from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
+from hybrid_transform import HybridAggregateTransform
+from hybrid_classifier import define_hybrid_clf
 
 import wandb
 
@@ -103,6 +104,7 @@ class HybridEvaluation(BaseEvaluation):
                         callback.wandb_run = wandb.run
 
                 # Fit
+                #pdb.set_trace()
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
                 wandb.finish()
@@ -113,11 +115,15 @@ class HybridEvaluation(BaseEvaluation):
                 ix = test < (self.len_run * 2 + test[0])
 
                 eval_model = model["Net"].module.generate_branch_model()
-                eval_classifier = define_clf(eval_model, self.eval_config, warm_start=True)
+                eval_model.num_models = 1
+
+                #
+                eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
+                                                    experiment_name='Evaluation')
                 if self.EA_in_eval:
-                    create_dataset = TransformaParaWindowsDatasetEA(self.len_run)
+                    create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
                 else:
-                    create_dataset = TransformaParaWindowsDataset()
+                    create_dataset = HybridAggregateTransform()
                 eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
                 # Evaluation set
@@ -138,30 +144,36 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
 
                     t_start = time()
-                    eval_clf = deepcopy(eval_pipe).fit(X[train], y[train])
+                    eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
+                                                       Braindecode_dataset__labels=y[test[ix]],
+                                                       Braindecode_dataset__subject_groups=groups[test[ix]],
+                                                       Braindecode_dataset__info=X[test[ix]].info)
                     duration = duration + time() - t_start
 
-                    create_dataset.y = y[train]
-                    score = _score(eval_clf, X[train], y[train], scorer)
+                    eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
+                    eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                    eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
+                    X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
 
-                    y_pred = eval_clf.predict(X[train])
-                    print("accuracy 0.5 : ", accuracy_score(y[train], y_pred))
+                    y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                    score = accuracy_score(y[test[ix_eval]], y_pred)
 
                 else:
+
+                    eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
+                    eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                    eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
 
                     for p in list(model["Net"].module.shared_modules.parameters()):
                         if p.requires_grad:
                             p.requires_grad = False
 
+                    # self.initialized_ = True
                     eval_pipe['Net'].initialize()
                     eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
                     eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
 
-                    # TODO: Shuffle test
-                    eval_classifier.classes_inferred_ = np.unique(to_numpy(y))
-                    create_dataset.y = y[train]
-                    #Xproc = create_dataset.transform(X[train], y[train])
-                    score = _score(eval_pipe, X[train], y[train], scorer)
+                    score = _score(eval_pipe, X[test[ix_eval]], y[test[ix_eval]], scorer)
 
                 wandb.run.summary['eval_score'] = score
                 wandb.finish()
@@ -183,7 +195,7 @@ class HybridEvaluation(BaseEvaluation):
                 print(res)
 
                 yield res
-            break
+            #break
 
 
 def active_wandb(args, config, subject, train=True):
