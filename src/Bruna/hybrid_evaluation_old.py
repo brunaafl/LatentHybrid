@@ -143,6 +143,9 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe['Net'].module.shared_modules = deepcopy(model["Net"].module.shared_modules)
                     eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
 
+                    for p in list(eval_pipe['Net'].module.shared_modules.parameters()):
+                        print(p.requires_grad)
+
                     t_start = time()
                     eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
                                                        Braindecode_dataset__labels=y[test[ix]],

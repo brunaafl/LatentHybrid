@@ -215,8 +215,11 @@ class HybridModel(nn.Module):
 
         return result
 
-    def generate_branch_model(self, subj):
-        new_layers = self.unique_modules[subj]
+    def generate_branch_model(self, subj=None):
+        if subj is None:
+            new_layers = self.init_unique_modules(*self._args)
+        else:
+            new_layers = copy.deepcopy(self.unique_modules[subj])
         cloned_layers = copy.deepcopy(self.shared_modules)
         norm_clone = copy.deepcopy(self.norm)
         if self.freeze:

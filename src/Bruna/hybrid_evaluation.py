@@ -122,15 +122,13 @@ class HybridEvaluation(BaseEvaluation):
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
-                copy_model = deepcopy(model)
+                for subj in range(model['Net'].module.num_models):
 
-                for subj in range(copy_model['Net'].module.num_models):
-
-                    eval_model = model["Net"].module.generate_branch_model(subj)
+                    copy_model = deepcopy(model)
+                    eval_model = copy_model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
 
-                    copy_eva_model = deepcopy(eval_model)
-                    eval_classifier = define_hybrid_clf(copy_eva_model, self.eval_config,
+                    eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
                                                         experiment_name='Evaluation')
                     if self.EA_in_eval:
                         create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
