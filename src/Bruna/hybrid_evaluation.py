@@ -154,12 +154,12 @@ class HybridEvaluation(BaseEvaluation):
 
                     # Just to ensure that the modules are being correctly copied
                     eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module_.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
-                    eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
+                    eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
+                    eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
+                    eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
+                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)
 
-                    if self.mode == 'Inference:':
+                    if self.mode == 'Inference':
 
                         eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
@@ -176,7 +176,7 @@ class HybridEvaluation(BaseEvaluation):
 
                         # Execute the second fit - fine-tuning
                         t_start = time()
-                        eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
+                        eval_clf = eval_pipe.fit(X[test[ix]], None,
                                                            Braindecode_dataset__labels=y[test[ix]],
                                                            Braindecode_dataset__subject_groups=groups[test[ix]],
                                                            Braindecode_dataset__info=X[test[ix]].info)
@@ -186,7 +186,6 @@ class HybridEvaluation(BaseEvaluation):
                         eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
                         X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
-
 
                         # Predict
                         y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
@@ -278,10 +277,10 @@ class HybridChooseHead(BaseEvaluation):
             subject = groups[test[0]]
 
             # now we can check if this subject has results
-            run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
+            #run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
 
             # iterate over pipelines
-            for name, clf in run_pipes.items():
+            for name, clf in pipelines.items():
 
                 # Start wandb monitoring
                 t_start = time()
@@ -329,10 +328,10 @@ class HybridChooseHead(BaseEvaluation):
 
                     # Inference on the calibration set
                     eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module_.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
-                    eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[subj])
+                    eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
+                    eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
+                    eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
+                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)
 
                     eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
                     eval_pipe["Braindecode_dataset"].groups = groups[test[ix]]
@@ -371,8 +370,8 @@ class HybridChooseHead(BaseEvaluation):
 
                 # Just to ensure that the modules are being correctly copied
                 eval_pipe['Net'].initialize()
-                eval_pipe['Net'].module.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
-                eval_pipe['Net'].module_.shared_modules = deepcopy(copy_model["Net"].module.shared_modules)
+                eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
+                eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
                 eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[best_subject])
                 eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[best_subject])
 
@@ -410,7 +409,7 @@ class HybridChooseHead(BaseEvaluation):
 
                 print(res)
                 yield res
-            #break
+            break
 
 
 def active_wandb(args, config, subject, train=True):

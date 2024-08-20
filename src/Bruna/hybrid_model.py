@@ -220,6 +220,7 @@ class HybridModel(nn.Module):
         cloned_layers = copy.deepcopy(self.shared_modules)
         norm_clone = copy.deepcopy(self.norm)
         if self.freeze:
+            print(self.freeze)
             cloned_layers.requires_grad_(False)
         return SpecializedModel(new_layers, norm_clone, cloned_layers)
 

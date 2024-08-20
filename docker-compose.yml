@@ -77,7 +77,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-nofreeze-bn:
-    profiles: ["Hybrid", "EA", "EA-No-freeze", "BN", "Hybrid-BN"]
+    profiles: ["Hybrid", "EA", "EA-No-freeze", "BN", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -91,21 +91,6 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-
-  hybrid-EA-nofreeze-bn-inf:
-    profiles: ["Hybrid", "EA", "No-Freeze", "BN", "Hybrid-BN-Inf"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-ea-nofreeze-bn-inference
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
 
   hybrid-EA-nofreeze-bn-choosehead:
     profiles: ["Hybrid", "EA", "No-freeze", "BN", "Hybrid-BN-Choose-EA"]
@@ -237,22 +222,6 @@ services:
       service: base-experiment
     container_name: hybrid-noea-nofreeze-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
-
-  hybrid-noEA-nofreeze-bn-inf:
-    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-Inf"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-noea-nofreeze-bn-inference
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
     deploy:
       resources:
         reservations:
