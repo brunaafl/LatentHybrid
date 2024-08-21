@@ -307,12 +307,12 @@ services:
 
 
   shared-EA-nofreeze:
-    profiles: ["Shared", "EA", "No-freeze", 'Shared-NoFreeze']
+    profiles: ["FullyShared", "EA", "No-freeze", 'Shared-NoFreeze']
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-nofreeze
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
+    command: "python src/Bruna/domain_adapt_exp1_old.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
     deploy:
       resources:
         reservations:
@@ -323,12 +323,12 @@ services:
 
 
   shared-noEA-nofreeze:
-    profiles: ["Shared", "No-EA", "No-freeze", 'Shared-NoFreeze']
+    profiles: ["FullyShared", "No-EA", "No-freeze", 'Shared-NoFreeze']
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-nofreeze
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
+    command: "python src/Bruna/domain_adapt_exp1_old.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
     deploy:
       resources:
         reservations:
@@ -340,12 +340,12 @@ services:
 
 
   hybrid-EA-nofreeze-old:
-    profiles: [ "EA", "No-freeze", "Hybrid-Old"]
+    profiles: ["EA", "No-freeze", "Hybrid-Old"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-nofreeze-oldv
-    command: "python src/Bruna/domain_adapt_exp1_old.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
+    command: "python src/Bruna/domain_adapt_exp1_old.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
     deploy:
       resources:
         reservations:
@@ -371,12 +371,12 @@ services:
 
 
   hybrid-NoEA-nofreeze-old:
-    profiles: [ "No-EA", "No-freeze", "Hybrid-Old"]
+    profiles: ["No-EA", "No-freeze", "Hybrid-Old"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-nofreeze-oldv
-    command: "python src/Bruna/domain_adapt_exp1_old.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
+    command: "python src/Bruna/domain_adapt_exp1_old.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset BNCI2014001 --eval_config_file config/eval_config_shared.yaml"
     deploy:
       resources:
         reservations:

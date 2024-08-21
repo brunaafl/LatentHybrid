@@ -275,10 +275,10 @@ class HybridChooseHead(BaseEvaluation):
             subject = groups[test[0]]
 
             # now we can check if this subject has results
-            #run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
+            run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
 
             # iterate over pipelines
-            for name, clf in pipelines.items():
+            for name, clf in run_pipes.items():
 
                 # Start wandb monitoring
                 t_start = time()

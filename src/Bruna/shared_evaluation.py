@@ -7,7 +7,7 @@ from sklearn.model_selection import (
 )
 from sklearn.model_selection._validation import _fit_and_score, _score
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import get_scorer
+from sklearn.metrics import get_scorer, accuracy_score
 from sklearn.pipeline import Pipeline
 
 from tqdm import tqdm
@@ -106,11 +106,15 @@ class SharedEvaluation(BaseEvaluation):
                 eval_pipe['Net'].initialize()
                 eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
                 eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
-                eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
-                eval_pipe["Braindecode_dataset"].groups = groups[test[ix]]
-                eval_pipe["Braindecode_dataset"].info = X[test[ix]].info
-                score = _score(eval_pipe, X[test[ix]], y[test[ix]], scorer)
+                eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
+                eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
+                eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
+                X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
 
+                # Fix dimension and predict
+                y_pred = eval_pipe['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                # Compute accuracy
+                score = accuracy_score(y[test[ix_eval]], y_pred)
                 print(score)
 
                 nchan = (

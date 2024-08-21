@@ -140,8 +140,8 @@ class HybridEvaluation(BaseEvaluation):
                         list(eval_model.shared_modules.parameters())[0].requires_grad:
 
                     eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module.shared_modules = deepcopy(model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module_.shared_modules = deepcopy(model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
+                    eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
 
                     for p in list(eval_pipe['Net'].module.shared_modules.parameters()):
                         print(p.requires_grad)
@@ -162,19 +162,20 @@ class HybridEvaluation(BaseEvaluation):
                     score = accuracy_score(y[test[ix_eval]], y_pred)
 
                 else:
+                    print('shared')
 
                     eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
                     eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
                     eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
 
-                    for p in list(model["Net"].module.shared_modules.parameters()):
+                    for p in list(eval_model.shared_modules.parameters()):
                         if p.requires_grad:
                             p.requires_grad = False
 
                     # self.initialized_ = True
                     eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module = deepcopy(model["Net"].module.shared_modules)
-                    eval_pipe['Net'].module_ = deepcopy(model["Net"].module.shared_modules)
+                    eval_pipe['Net'].module = deepcopy(eval_model.shared_modules)
+                    eval_pipe['Net'].module_ = deepcopy(eval_model.shared_modules)
 
                     score = _score(eval_pipe, X[test[ix_eval]], y[test[ix_eval]], scorer)
 
