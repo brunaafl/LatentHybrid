@@ -151,11 +151,11 @@ class HybridEvaluation(BaseEvaluation):
                     # First, test the model without the second fit
 
                     # Just to ensure that the modules are being correctly copied
-                    eval_pipe['Net'].initialize()
+                    """eval_pipe['Net'].initialize()
                     eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
                     eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
                     eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
-                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)
+                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)"""
 
                     if self.mode == 'Inference':
 
@@ -325,11 +325,11 @@ class HybridChooseHead(BaseEvaluation):
                     eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
                     # Inference on the calibration set
-                    eval_pipe['Net'].initialize()
+                    """eval_pipe['Net'].initialize()
                     eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
                     eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
                     eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
-                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)
+                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)"""
 
                     eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
                     eval_pipe["Braindecode_dataset"].groups = groups[test[ix]]
@@ -367,12 +367,12 @@ class HybridChooseHead(BaseEvaluation):
                         callback.wandb_run = wandb.run
 
                 # Just to ensure that the modules are being correctly copied
-                eval_pipe['Net'].initialize()
+                """eval_pipe['Net'].initialize()
                 eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
                 eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
                 eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[best_subject])
                 eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[best_subject])
-
+                """
                 # Execute the second fit - fine-tuning
                 t_start = time()
                 eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
