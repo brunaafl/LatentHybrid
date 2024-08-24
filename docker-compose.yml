@@ -31,7 +31,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-freeze-bn-choosehead:
-    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN-Choose-EA"]
+    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN-Choose"]
     extends:
       file: base.yml
       service: base-experiment
@@ -231,7 +231,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noEA-nofreeze-bn-choosehead:
-    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze", "Hybrid-BN-Choose", ]
+    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze",]
     extends:
       file: base.yml
       service: base-experiment

@@ -325,11 +325,11 @@ class HybridChooseHead(BaseEvaluation):
                     eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
                     # Inference on the calibration set
-                    """eval_pipe['Net'].initialize()
+                    eval_pipe['Net'].initialize()
                     eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
                     eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
                     eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
-                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)"""
+                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)
 
                     eval_pipe["Braindecode_dataset"].labels = y[test[ix]]
                     eval_pipe["Braindecode_dataset"].groups = groups[test[ix]]
@@ -407,7 +407,7 @@ class HybridChooseHead(BaseEvaluation):
 
                 print(res)
                 yield res
-            break
+            #break
 
 
 def active_wandb(args, config, subject, train=True):
