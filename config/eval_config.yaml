@@ -3,7 +3,7 @@ train:
     num_workers: 10
     run_report: '/workspace/outputs'
     n_epochs: 1000 #500
-    patience: 250
+    patience: 500
     weight_decay: 0
     batch_size: 12 #12
     lr: 0.001 #0.0005 0.001 0.005

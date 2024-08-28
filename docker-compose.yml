@@ -387,7 +387,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-freeze-old:
-    profiles: ["EA", "Freeze", "Hybrid-Old"]
+    profiles: ["EA", "Freeze", "Hybrid-Old-Freeze"]
     extends:
       file: base.yml
       service: base-experiment
@@ -418,7 +418,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-NoEA-freeze-old:
-    profiles: ["No-EA", "Freeze", "Hybrid-Old"]
+    profiles: ["No-EA", "Freeze", "Hybrid-Old-Freeze"]
     extends:
       file: base.yml
       service: base-experiment

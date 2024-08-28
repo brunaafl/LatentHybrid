@@ -154,7 +154,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/RandomHeads-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_results.csv")
+    results.to_csv(f"{run_dir}/RandomHeads-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_NoStop_results.csv")
     
     print("---------------------------------------")
 
