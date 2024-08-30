@@ -151,13 +151,13 @@ class HybridEvaluation(BaseEvaluation):
                     # First, test the model without the second fit
 
                     # Just to ensure that the modules are being correctly copied
-                    """eval_pipe['Net'].initialize()
-                    eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
-                    eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
-                    eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
-                    eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)"""
 
                     if self.mode == 'Inference':
+                        eval_pipe['Net'].initialize()
+                        eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
+                        eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
+                        eval_pipe['Net'].module.unique_modules = deepcopy(eval_model.unique_modules)
+                        eval_pipe['Net'].module_.unique_modules = deepcopy(eval_model.unique_modules)
 
                         eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
@@ -347,6 +347,22 @@ class HybridChooseHead(BaseEvaluation):
                         best_subject = subj
                         print(best_subject)
 
+                    res = {
+                        "time": duration,
+                        "dataset": dataset,
+                        "head": subj,
+                        "subject": subject,
+                        "session": 'session_E',
+                        "score": score,
+                        "n_samples": len(train),
+                        "n_channels": nchan,
+                        "pipeline": name,
+                    }
+
+                    print(res)
+                    yield res
+
+                """
                 # Now, use best head for fine-tuning
                 eval_model = copy_model["Net"].module.generate_branch_model(best_subject)
                 eval_model.num_models = 1
@@ -367,12 +383,6 @@ class HybridChooseHead(BaseEvaluation):
                         callback.wandb_run = wandb.run
 
                 # Just to ensure that the modules are being correctly copied
-                """eval_pipe['Net'].initialize()
-                eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
-                eval_pipe['Net'].module_.shared_modules = deepcopy(eval_model.shared_modules)
-                eval_pipe['Net'].module.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[best_subject])
-                eval_pipe['Net'].module_.unique_modules = deepcopy(copy_model["Net"].module.unique_modules[best_subject])
-                """
                 # Execute the second fit - fine-tuning
                 t_start = time()
                 eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
@@ -392,21 +402,8 @@ class HybridChooseHead(BaseEvaluation):
 
                 wandb.run.summary['eval_score'] = score
                 wandb.finish()
+                """
 
-                res = {
-                    "time": duration,
-                    "dataset": dataset,
-                    "head": best_subject,
-                    "subject": subject,
-                    "session": 'session_E',
-                    "score": score,
-                    "n_samples": len(train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                }
-
-                print(res)
-                yield res
             #break
 
 
