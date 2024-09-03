@@ -131,9 +131,9 @@ class HybridEvaluation(BaseEvaluation):
                     eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
                                                         experiment_name='Evaluation')
                     if self.EA_in_eval:
-                        create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
+                        create_dataset = HybridAggregateTransform(EA_len_run=self.len_run, data_code=dataset.code)
                     else:
-                        create_dataset = HybridAggregateTransform()
+                        create_dataset = HybridAggregateTransform(data_code=dataset.code)
                     eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
                     # Evaluation set
@@ -347,64 +347,20 @@ class HybridChooseHead(BaseEvaluation):
                         best_subject = subj
                         print(best_subject)
 
-                    res = {
-                        "time": duration,
-                        "dataset": dataset,
-                        "head": subj,
-                        "subject": subject,
-                        "session": 'session_E',
-                        "score": score,
-                        "n_samples": len(train),
-                        "n_channels": nchan,
-                        "pipeline": name,
-                    }
+                res = {
+                    "time": duration,
+                    "dataset": dataset,
+                    "head": best_subject,
+                    "subject": subject,
+                    "session": 'session_E',
+                    "score": best_score,
+                    "n_samples": len(train),
+                    "n_channels": nchan,
+                    "pipeline": name,
+                }
 
-                    print(res)
-                    yield res
-
-                """
-                # Now, use best head for fine-tuning
-                eval_model = copy_model["Net"].module.generate_branch_model(best_subject)
-                eval_model.num_models = 1
-
-                copy_eva_model = deepcopy(eval_model)
-                eval_classifier = define_hybrid_clf(copy_eva_model, self.eval_config,
-                                                    experiment_name='Evaluation')
-                if self.EA_in_eval:
-                    create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
-                else:
-                    create_dataset = HybridAggregateTransform()
-                eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
-
-                eval_run = active_wandb_eval(self.wandb_params[0], self.eval_config, subject_num, best_subject, train=False)
-
-                for callback in eval_classifier.callbacks:
-                    if isinstance(callback, WandbLogger):
-                        callback.wandb_run = wandb.run
-
-                # Just to ensure that the modules are being correctly copied
-                # Execute the second fit - fine-tuning
-                t_start = time()
-                eval_clf = deepcopy(eval_pipe).fit(X[test[ix]], None,
-                                                   Braindecode_dataset__labels=y[test[ix]],
-                                                   Braindecode_dataset__subject_groups=groups[test[ix]],
-                                                   Braindecode_dataset__info=X[test[ix]].info)
-                duration = duration + time() - t_start
-
-                eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
-                eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
-                eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
-                X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
-
-                # Predict
-                y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
-                score = accuracy_score(y[test[ix_eval]], y_pred)
-
-                wandb.run.summary['eval_score'] = score
-                wandb.finish()
-                """
-
-            #break
+                print(res)
+                yield res
 
 
 def active_wandb(args, config, subject, train=True):

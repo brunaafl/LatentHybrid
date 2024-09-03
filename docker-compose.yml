@@ -15,6 +15,21 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+  hybrid-EA-freeze-bn-robin:
+    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN", "Hybrid-BN-Schirrmeister"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-freeze-bn-robin
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
   hybrid-EA-freeze-bn-inf:
     profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN-Inf"]
     extends:
@@ -91,6 +106,21 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+  hybrid-EA-nofreeze-bn-robin:
+    profiles: ["Hybrid", "EA", "Freeze", "BN", "Hybrid-BN", "Hybrid-BN-Schirrmeister"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-nofreeze-bn-robin
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze no-freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
 
   hybrid-EA-nofreeze-nobn:
     profiles: ["Hybrid", "EA", "No-freeze", "NoBN", "Hybrid-NoBN", "Hybrid-NoBN-NoFreeze"]
@@ -129,6 +159,21 @@ services:
       service: base-experiment
     container_name: hybrid-noea-freeze-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-noEA-freeze-bn-robin:
+    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN-Schirrmeister"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-freeze-bn-robin
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False"
     deploy:
       resources:
         reservations:
@@ -213,6 +258,23 @@ services:
             - driver: nvidia
               device_ids: ['1']
               capabilities: [ gpu ]
+
+
+  hybrid-noEA-nofreeze-bn-robin:
+    profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze", "Hybrid-BN-Schirrmeister", ]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-nofreeze-bn-robin
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze no-freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
 
   hybrid-noEA-nofreeze-nobn:
     profiles: ["Hybrid", "No-EA", "No-freeze", "NoBN", "Hybrid-NoBN", "Hybrid-NoBN-NoFreeze"]
@@ -401,7 +463,20 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-
+  test:
+    profiles: ["Test-Size"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: test-size
+    command: "python src/Bruna/test_size.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --eval_config_file config/eval_config.yaml "
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
 
   jupyter:
     profiles: ["jupyter"]
