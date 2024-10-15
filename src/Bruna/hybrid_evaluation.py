@@ -122,6 +122,7 @@ class HybridEvaluation(BaseEvaluation):
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
+                # Iterate over all source heads
                 for subj in range(model['Net'].module.num_models):
 
                     copy_model = deepcopy(model)
@@ -148,10 +149,7 @@ class HybridEvaluation(BaseEvaluation):
 
                     # Inference part
 
-                    # First, test the model without the second fit
-
-                    # Just to ensure that the modules are being correctly copied
-
+                    # If not fine-tuning
                     if self.mode == 'Inference':
                         eval_pipe['Net'].initialize()
                         eval_pipe['Net'].module.shared_modules = deepcopy(eval_model.shared_modules)
@@ -170,9 +168,8 @@ class HybridEvaluation(BaseEvaluation):
                         score = accuracy_score(y[test[ix_eval]], y_pred)
                         print(score)
 
+                    # If fine-tuning
                     else:
-
-                        # Execute the second fit - fine-tuning
                         t_start = time()
                         eval_clf = eval_pipe.fit(X[test[ix]], None,
                                                            Braindecode_dataset__labels=y[test[ix]],

@@ -203,17 +203,22 @@ class HybridModel(nn.Module):
 
     def forward(self, x):
         inputs = self.split_input(x)
-        out = []
+        out, feat = [], []
         for i, model_input in enumerate(inputs):
             temp_unique = self.unique_modules[i](model_input)
+            feat.append(temp_unique)
             temp_norm = self.norm(temp_unique)
             temp_shared = self.shared_modules(temp_norm)
             out.append(temp_shared)
         result = torch.stack(out)
+        feat = torch.stack(feat)
+
         if result.requires_grad:
             result.retain_grad()
+            feat.retain_grad()
 
-        return result
+        # Return features also
+        return result, feat
 
     def generate_branch_model(self, subj=None):
         if subj is None:
