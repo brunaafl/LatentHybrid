@@ -233,41 +233,6 @@ class HybridModel(nn.Module):
         return SpecializedModel(new_layers, norm_clone, cloned_layers)
 
 
-class SharedModel(nn.Module):
-    def __init__(self, n_chans, n_classes, input_window_samples, config=None, freeze='freeze',
-                 args=None):
-        super(SharedModel, self).__init__()
-        self._args = (n_chans, n_classes, input_window_samples)
-        self.config = config
-        self.args = args
-        self.num_models = 8
-
-        temp_model = EEGNetv4(
-            n_chans,
-            n_classes,
-            input_window_samples=input_window_samples,
-            final_conv_length=config.model.final_conv_length,
-            drop_prob=config.model.drop_prob
-        )
-
-        self.shared_modules = temp_model
-
-    def split_input(self, X):
-        return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
-
-    def forward(self, x):
-        inputs = self.split_input(x)
-        out = []
-        for i, model_input in enumerate(inputs):
-            temp_shared = self.shared_modules(model_input)
-            out.append(temp_shared)
-        result = torch.stack(out)
-        if result.requires_grad:
-            result.retain_grad()
-
-        return result
-
-
 class SpecializedModel(nn.Module):
     def __init__(self, unique_modules, norm_clone, cloned_modules, num_models=1):
         super(SpecializedModel, self).__init__()
@@ -282,26 +247,22 @@ class SpecializedModel(nn.Module):
     def forward(self, x):
 
         inputs = self.split_input(x)
-        out = []
+        out, feat = [], []
         for i, model_input in enumerate(inputs):
             temp_unique = self.unique_modules(model_input)
+            feat.append(temp_unique)
             temp_shared = self.shared_modules(temp_unique)
-
             out.append(temp_shared)
+
         result = torch.stack(out)
+        feat = torch.stack(feat)
         if result.requires_grad:
             result.retain_grad()
+            feat.retain_grad()
 
-        return result
+        return result, feat
 
-    """def forward(self, x):
-
-        print(x.shape)
-        x = self.unique_modules(x)
-        print(x.shape)
-        x = self.shared_modules(x)
-        print(x)
-        return x"""
 
     def predict(self, X):
-        return self.forward(X).argmax()
+        result, _ = self.forward(X)
+        return self.result.argmax()

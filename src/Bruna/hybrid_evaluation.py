@@ -129,6 +129,7 @@ class HybridEvaluation(BaseEvaluation):
                     eval_model = copy_model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
 
+                    # TODO: for the test set, I want to get the same centers as used in the train
                     eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
                                                         experiment_name='Evaluation')
                     if self.EA_in_eval:
@@ -163,7 +164,7 @@ class HybridEvaluation(BaseEvaluation):
                         X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
 
                         # Fix dimension and predict
-                        y_pred = eval_pipe['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                        y_pred, _ = eval_pipe['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
                         # Compute accuracy
                         score = accuracy_score(y[test[ix_eval]], y_pred)
                         print(score)
@@ -183,7 +184,7 @@ class HybridEvaluation(BaseEvaluation):
                         X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
 
                         # Predict
-                        y_pred = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                        y_pred, _ = eval_clf['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
                         score = accuracy_score(y[test[ix_eval]], y_pred)
 
                         wandb.run.summary['eval_score'] = score

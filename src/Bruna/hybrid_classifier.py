@@ -1,15 +1,14 @@
 import torch
+import wandb
 
 import numpy as np
-from sklearn.metrics import accuracy_score
-
-from skorch.dataset import ValidSplit, unpack_data
-from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
-from skorch.utils import to_tensor
 
 from braindecode import EEGClassifier
 
-import wandb
+from sklearn.metrics import accuracy_score
+from skorch.dataset import ValidSplit, unpack_data
+from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
+from skorch.utils import to_tensor
 
 from hybrid_scoring import HybridScoring
 from alignment_loss import AlignmentLoss
@@ -18,9 +17,10 @@ from alignment_loss import AlignmentLoss
 # Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):
 
-    def __init__(self, alignment_criterion=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, alignment_criterion=None, alignment_opt = None, *args, **kwargs):
+        super(HybridClassifier, self).__init__(alignment_criterion=None, alignment_opt = None,*args, **kwargs)
         self.alignment_criterion = alignment_criterion
+        self.alignment_opt = alignment_opt
 
     def get_loss(self, y_pred, y_true, Lambda=0.0005, *args, **kwargs):
 
@@ -124,6 +124,7 @@ def define_hybrid_clf(model, config, experiment_name):
         criterion=torch.nn.NLLLoss,
         alignment_criterion=AlignmentLoss,
         optimizer=torch.optim.AdamW,
+        alignment_opt=torch.optim.SGD(AlignmentLoss.parameters(), lr=0.1),
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,

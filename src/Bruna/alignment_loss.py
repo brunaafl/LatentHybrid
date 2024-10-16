@@ -9,6 +9,7 @@ class AlignmentLoss(nn.Module):
         random.seed(42)
 
         # If num_classes=1, align every subject to the same center, regardless of class
+        # Change here to feat dimensions
         centroids = random.randn(num_classes, feat_dim)
         self.centroids = nn.Parameter(torch.from_numpy(centroids))
         self.alignmentlossfunc = AlignmentlossFunc.apply
