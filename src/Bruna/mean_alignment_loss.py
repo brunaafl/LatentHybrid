@@ -1,56 +1,60 @@
 import torch
+
+import numpy as np
 import torch.nn as nn
 from torch.autograd.function import Function
 from numpy import random
 
-class AlignmentLoss(nn.Module):
-    def __init__(self, feat_dim, num_classes=1, size_average=True, centroids=None):
-        super(AlignmentLoss, self).__init__()
+class MeanAlignmentLoss(nn.Module):
+    def __init__(self, num_classes=1, size_average=True):
+        super(MeanAlignmentLoss, self).__init__()
         random.seed(42)
 
         # If num_classes=1, align every subject to the same center, regardless of class
 
         # TODO: Ask: what is better, define a common center and learn it, or just try to approximate all subjects?
         # Another thing to ask, is it necessary to learn the centers or you can set them and try to make everyone close?
-        if centroids is None:
-            if isinstance(feat_dim, tuple):
-                centroids = random.randn(num_classes, *feat_dim)
-            else:
-                centroids = random.randn(num_classes, feat_dim)
-        self.centroids = nn.Parameter(torch.from_numpy(centroids))
+
         self.alignmentlossfunc = AlignmentlossFunc.apply
-        self.feat_dim = feat_dim
         self.size_average = size_average
 
-    def forward(self, feat, label):
-        batch_size = feat.size(0)
-        feat = feat.view(batch_size, -1)
+    def forward(self, feat1, feat2, label1, label2):
+        batch_size = feat1.size(0)
+        feat1 = feat1.view(batch_size, -1)
+        feat2 = feat2.view(batch_size, -1)
 
-        # To check the dim of centers and features
-        if feat.size(1) != self.feat_dim:
-            raise ValueError("Center's dim: {0} should be equal to input feature's \
-                            dim: {1}".format(self.feat_dim,feat.size(1)))
+        # To check the dim of the features
+        if feat1.size(1) != feat2.size(1):
+            raise ValueError("Feature's dimensions should be equal, but "
+                             "{0} != {1}".format(feat2.size(1),feat2.size(1)))
 
-        batch_size_tensor = feat.new_empty(1).fill_(batch_size if self.size_average else 1)
-        loss = self.alignmentlossfunc(feat, label, self.centroids, batch_size_tensor)
+        # To check if number of classes is the same
+        if feat1.size(1) != feat2.size(1):
+            raise ValueError("Number of classes should be the same, but {0} != {1}".format(
+                len(torch.unique(label1)),len(torch.unique(label2))))
+
+        batch_size_tensor = feat1.new_empty(1).fill_(batch_size if self.size_average else 1)
+        loss = self.alignmentlossfunc(feat1, feat2, label1, label2, batch_size_tensor)
         return loss
 
 
 class AlignmentlossFunc(Function):
     @staticmethod
-    def forward(ctx, feature, label, centroids, batch_size):
-        ctx.save_for_backward(feature, label, centroids, batch_size)
+    def forward(ctx, feat1, feat2, label1, label2, batch_size):
+        ctx.save_for_backward(feat1, feat2, label1, label2, batch_size)
 
-        # Creates a vector with dim of long and respective centers for each label
-        if centroids.size(0)==1:
-            centers_batch=centroids
-        else:
-            centers_batch = centroids.index_select(0, label.long())
-        return (feature - centers_batch).pow(2).sum() / 2.0 / batch_size
+        # I want to: do a subtraction per class
+        unique_classes = torch.unique(label1)
+        # Compute the mean per class
+        mean1 = torch.stack([feat1[label1 == cls].mean(dim=0) for cls in unique_classes])
+        mean2 = torch.stack([feat2[label2 == cls].mean(dim=0) for cls in unique_classes])
 
+        return (mean1 - mean2).pow(2).sum() / 2.0 / batch_size
+
+    # I'm not sure if i need to keep this backward method since i'm not optimizing the center
     @staticmethod
     def backward(ctx, grad_output):
-        feature, label, centroids, batch_size = ctx.saved_tensors
+        feat1, feat2, label1, label2, batch_size = ctx.saved_tensors
 
         if centroids.size(0)==1:
             centers_batch=centroids.clone()

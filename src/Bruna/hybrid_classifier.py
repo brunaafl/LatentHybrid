@@ -41,6 +41,8 @@ class HybridClassifier(EEGClassifier):
                 feat_slice.retain_grad()
 
             loss = self.criterion_(y_slice, y_true[:, subject])
+
+            # Outro jeito: tentar aproximar a média desse subjeito à média do outro
             loss_align = self.alignment_criterion(feat_slice, y_slice)
             losses.append(loss)
             loss_harmonize.append(loss_align)
@@ -96,7 +98,7 @@ def average_acc_scoring(model, x, y_true):
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
 
 
-def define_hybrid_clf(model, config, experiment_name):
+def define_hybrid_clf(model, config, experiment_name, feat_dim, n_centers=1):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
@@ -119,12 +121,14 @@ def define_hybrid_clf(model, config, experiment_name):
     scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i:02d}_valid_acc',
                                        lower_is_better=False) for i in range(model.num_models)]
 
+    alignment_loss = AlignmentLoss(feat_dim=feat_dim,num_classes=n_centers)
+
     clf = HybridClassifier(
         model,
         criterion=torch.nn.NLLLoss,
-        alignment_criterion=AlignmentLoss,
+        alignment_criterion=AlignmentLoss(feat_dim=feat_dim,num_classes=n_centers),
         optimizer=torch.optim.AdamW,
-        alignment_opt=torch.optim.SGD(AlignmentLoss.parameters(), lr=0.1),
+        alignment_opt=torch.optim.SGD(alignment_loss.parameters(), lr=0.1),
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
