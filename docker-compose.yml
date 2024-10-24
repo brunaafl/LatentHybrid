@@ -1,7 +1,7 @@
 services:
 
   hybrid-EA-freeze-bn:
-    profiles: ["Hybrid", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-Test", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment

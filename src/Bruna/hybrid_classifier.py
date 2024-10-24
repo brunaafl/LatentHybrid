@@ -17,12 +17,25 @@ from alignment_loss import AlignmentLoss
 # Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):
 
-    def __init__(self, alignment_criterion=None, alignment_opt = None, *args, **kwargs):
-        super(HybridClassifier, self).__init__(alignment_criterion=None, alignment_opt = None,*args, **kwargs)
-        self.alignment_criterion = alignment_criterion
-        self.alignment_opt = alignment_opt
+    def __init__(self, criterion_alignment=None, lambd=0.001, *args, **kwargs):
+        super(HybridClassifier, self).__init__(*args, **kwargs)
+        self.lambd = lambd
+        self.criterion_alignment = criterion_alignment
 
-    def get_loss(self, y_pred, y_true, Lambda=0.0005, *args, **kwargs):
+    #def initialize_alignment_criterion(self):
+        """Initializes the alignment criterion.
+
+        If the criterion is already initialized and no parameter was changed, it
+        will be left as is.
+
+        """
+    #    kwargs = self.get_params_for('alignment_criterion')
+    #    alignmnt_criterion = self.initialized_instance(self.alignment_criterion, kwargs)
+    #    self.alignment_criterion_ = alignmnt_criterion
+    #    return self
+
+
+    def get_loss(self, y_pred, y_true, *args, **kwargs):
 
         # y_pred is a tuple with (out, feat)
         y_pred, feature = y_pred
@@ -41,13 +54,12 @@ class HybridClassifier(EEGClassifier):
                 feat_slice.retain_grad()
 
             loss = self.criterion_(y_slice, y_true[:, subject])
+            loss_align = self.criterion_alignment_(feat_slice, y_slice)
 
-            # Outro jeito: tentar aproximar a média desse subjeito à média do outro
-            loss_align = self.alignment_criterion(feat_slice, y_slice)
             losses.append(loss)
             loss_harmonize.append(loss_align)
 
-        loss = (sum(losses) + Lambda*sum(loss_harmonize))/self.module.num_models
+        loss = (sum(losses) + self.lambd*sum(loss_harmonize))/self.module.num_models
 
         return loss
 
@@ -98,7 +110,7 @@ def average_acc_scoring(model, x, y_true):
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
 
 
-def define_hybrid_clf(model, config, experiment_name, feat_dim, n_centers=1):
+def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_centers=1):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
@@ -121,14 +133,13 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim, n_centers=1):
     scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i:02d}_valid_acc',
                                        lower_is_better=False) for i in range(model.num_models)]
 
-    alignment_loss = AlignmentLoss(feat_dim=feat_dim,num_classes=n_centers)
+    alignment_loss = JointAlignmentLoss(feat_dim=feat_dim,num_classes=n_centers)
 
     clf = HybridClassifier(
-        model,
+        module=model,
         criterion=torch.nn.NLLLoss,
-        alignment_criterion=AlignmentLoss(feat_dim=feat_dim,num_classes=n_centers),
+        criterion_alignment=AlignmentLoss(num_classes=n_centers),
         optimizer=torch.optim.AdamW,
-        alignment_opt=torch.optim.SGD(alignment_loss.parameters(), lr=0.1),
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
