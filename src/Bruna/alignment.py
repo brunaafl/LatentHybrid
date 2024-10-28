@@ -70,3 +70,16 @@ def compute_EA(X, size=24, domain=None, estimator='lwf', dtype='raw'):
             X_aux.append(X_batch_EA)
         covmat_EA = np.concatenate(X_aux)
     return covmat_EA
+
+def split_runs_EA(X, len_run):
+    X_aux = []
+    m = len_run
+    n = X.shape[0]
+    for k in range(int(n / m)):
+        run = X[k * m:(k + 1) * m]
+        run_EA, _ = euclidean_alignment(run)
+        X_aux.append(run_EA)
+    X_EA = np.concatenate(X_aux)
+    return X_EA
+
+

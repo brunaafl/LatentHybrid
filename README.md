@@ -16,7 +16,7 @@ pip install -r requirements.txt
 Once you have set up the virtual environment, you can run the code using the following command:
 
 ```bash
-python src/Bruna/script_moabb_exp1.py --config_file config/config.yaml --alignment 'alignment' --num_exp 'exp_1' --dataset 'BNCI2014001'
+python src/Bruna/domain_adapt_exp1.py --config_file config/config.yaml --alignment 'alignment' --num_exp 'exp_1' --dataset 'BNCI2014001'
 ```
 Here is a brief explanation of the command line arguments:
 

@@ -10,7 +10,7 @@ from braindecode.preprocessing import create_fixed_length_windows
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 
-from dataset import split_runs_EA
+from alignment import split_runs_EA
 
 
 class HybridAggregateTransform(BaseEstimator, TransformerMixin):

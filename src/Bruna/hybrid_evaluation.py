@@ -164,7 +164,7 @@ class HybridEvaluation(BaseEvaluation):
 
                         # Fix dimension and predict
                         pred,_ = eval_pipe['Net'].forward(X_trn)
-                        y_pred, _ = pred.flatten(0, 1).argmax(dim=1)
+                        y_pred = pred.flatten(0, 1).argmax(dim=1)
                         # Compute accuracy
                         score = accuracy_score(y[test[ix_eval]], y_pred)
                         print(score)
@@ -185,7 +185,7 @@ class HybridEvaluation(BaseEvaluation):
 
                         # Predict
                         pred, _ = eval_pipe['Net'].forward(X_trn)
-                        y_pred, _ = pred.flatten(0, 1).argmax(dim=1)
+                        y_pred = pred.flatten(0, 1).argmax(dim=1)
                         score = accuracy_score(y[test[ix_eval]], y_pred)
 
                         wandb.run.summary['eval_score'] = score

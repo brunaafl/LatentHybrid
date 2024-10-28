@@ -24,8 +24,7 @@ from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler
 from skorch.dataset import ValidSplit
 
 from pipeline import TransformaParaWindowsDatasetEA
-from dataset import split_runs_EA
-from alignment import euclidean_alignment
+from alignment import euclidean_alignment, split_runs_EA
 
 mne.set_log_level(False)
 log = logging.getLogger(__name__)

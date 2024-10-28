@@ -4,8 +4,7 @@ from numpy import unique
 
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 
-from alignment import euclidean_alignment
-from dataset import split_runs_EA
+from alignment import euclidean_alignment, split_runs_EA
 
 
 class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
