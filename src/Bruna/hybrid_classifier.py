@@ -11,29 +11,15 @@ from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientN
 from skorch.utils import to_tensor
 
 from hybrid_scoring import HybridScoring
-from alignment_loss import AlignmentLoss
+from alignment_loss import JointAlignmentLoss
 
 
 # Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):
 
-    def __init__(self, criterion_alignment=None, lambd=0.001, *args, **kwargs):
+    def __init__(self, lambd=0.001, *args, **kwargs):
         super(HybridClassifier, self).__init__(*args, **kwargs)
         self.lambd = lambd
-        self.criterion_alignment = criterion_alignment
-
-    #def initialize_alignment_criterion(self):
-        """Initializes the alignment criterion.
-
-        If the criterion is already initialized and no parameter was changed, it
-        will be left as is.
-
-        """
-    #    kwargs = self.get_params_for('alignment_criterion')
-    #    alignmnt_criterion = self.initialized_instance(self.alignment_criterion, kwargs)
-    #    self.alignment_criterion_ = alignmnt_criterion
-    #    return self
-
 
     def get_loss(self, y_pred, y_true, *args, **kwargs):
 
@@ -41,7 +27,7 @@ class HybridClassifier(EEGClassifier):
         y_pred, feature = y_pred
         y_true = to_tensor(y_true, device=self.device)
         losses = []
-        loss_harmonize = []
+
         for subject in range(y_pred.shape[0]):
 
             # I actually want the features before fc, or just after unique
@@ -53,22 +39,20 @@ class HybridClassifier(EEGClassifier):
             if feature.requires_grad:
                 feat_slice.retain_grad()
 
-            loss = self.criterion_(y_slice, y_true[:, subject])
-            loss_align = self.criterion_alignment_(feat_slice, y_slice)
+            loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
 
             losses.append(loss)
-            loss_harmonize.append(loss_align)
 
-        loss = (sum(losses) + self.lambd*sum(loss_harmonize))/self.module.num_models
+        loss = sum(losses)/self.module.num_models
 
         return loss
 
 def get_subject_acc_scorer(subject):
     def scoring_for_subject_i(model, x, y_true):
         # Adapt here to deal with (out,feat) tuple
-        results = list(model.forward_iter())
-        out, _ = zip(*results)  # Unpack the results
-        out = torch.cat(out, dim=0)  # Concatenate each output type
+        out = list(model.forward_iter())
+        #out, _ = zip(*results)  # Unpack the results
+        #out = torch.cat(out, dim=0)  # Concatenate each output type
         y_preds = [z for z in out]
 
         subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
@@ -82,9 +66,9 @@ def get_subject_acc_scorer(subject):
 def get_subject_loss_scorer(subject, criterion):
     def scoring_for_subject_i(model, x, y_true):
         # Adapt here to deal with (out,feat) tuple
-        results = list(model.forward_iter())
-        out, _ = zip(*results)  # Unpack the results
-        out = torch.cat(out, dim=0)  # Concatenate each output type
+        out = list(model.forward_iter())
+        #out, _ = zip(*results)  # Unpack the results
+        #out = torch.cat(out, dim=0)  # Concatenate each output type
         y_preds = [z for z in out]
 
         true_slice = to_tensor(y_true[:, subject], device=model.device)
@@ -96,10 +80,15 @@ def get_subject_loss_scorer(subject, criterion):
 
 def average_acc_scoring(model, x, y_true):
     # Adapt here to deal with (out,feat) tuple
-    results = list(model.forward_iter())
-    out, _ = zip(*results)  # Unpack the results
-    out = torch.cat(out, dim=0) # Concatenate each output type
+    out = list(model.forward_iter())
+    #print(type(results))
+    #print(len(results))
+    #out, _ = results[0] # Unpack the results
+    #print(len(out))
+    #out = torch.cat(out, dim=0) # Concatenate each output type
+    #print(out.shape)
     y_preds = [z for z in out]
+    #print(len(y_preds))
 
     accuracies_per_subject = []
     for subject in range(len(y_preds)):
@@ -137,8 +126,7 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_cen
 
     clf = HybridClassifier(
         module=model,
-        criterion=torch.nn.NLLLoss,
-        criterion_alignment=AlignmentLoss(num_classes=n_centers),
+        criterion=JointAlignmentLoss,
         optimizer=torch.optim.AdamW,
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,

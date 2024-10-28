@@ -93,7 +93,7 @@ services:
 
 
   hybrid-noEA-freeze-bn:
-    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN"]
+    profiles: ["Hybrid-Test", "No-EA", "freeze", "BN", "Hybrid-BN"]
     extends:
       file: base.yml
       service: base-experiment

@@ -18,6 +18,7 @@ class HybridScoring(EpochScoring):
         if not self.use_caching or training != self.on_train:
             return
         _X, y = unpack_data(batch)
+        y_pred, _ = list(y_pred)
         self.y_trues_.append(y)
         for subject_i in range(net.module.num_models):
             self.y_preds_[subject_i].append(torch.select(y_pred, 0, subject_i))
