@@ -187,21 +187,6 @@ services:
               capabilities: [ gpu ]
 
 
-  test:
-    profiles: ["Test-Size"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: test-size
-    command: "python src/Bruna/test_size.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --eval_config_file config/eval_config.yaml "
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
   jupyter:
     profiles: ["jupyter"]
     #user: "0:0"
