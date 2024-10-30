@@ -1,3 +1,6 @@
+import warnings
+
+import moabb
 from torch import nn
 import pdb
 
@@ -31,7 +34,8 @@ from hybrid_classifier import define_hybrid_clf
 
 import wandb
 
-
+moabb.set_log_level("info")
+warnings.filterwarnings("ignore")
 
 class HybridEvaluation(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,

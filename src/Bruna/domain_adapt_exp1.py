@@ -2,8 +2,10 @@
 Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 """
+import warnings
 
 import torch
+import moabb
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
@@ -31,6 +33,8 @@ from time import time
 For the joint model
 """
 
+moabb.set_log_level("info")
+warnings.filterwarnings("ignore")
 
 def main(args):
     """
@@ -160,7 +164,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/Heads-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/2-centers_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
     
     print("---------------------------------------")
 

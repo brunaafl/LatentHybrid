@@ -99,7 +99,7 @@ def average_acc_scoring(model, x, y_true):
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
 
 
-def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_centers=1):
+def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_centers=2):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
@@ -121,8 +121,6 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_cen
 
     scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i:02d}_valid_acc',
                                        lower_is_better=False) for i in range(model.num_models)]
-
-    alignment_loss = JointAlignmentLoss(feat_dim=feat_dim,num_classes=n_centers)
 
     clf = HybridClassifier(
         module=model,
