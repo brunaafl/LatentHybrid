@@ -47,4 +47,3 @@ class JointAlignmentLoss(nn.Module):
         loss = pred_loss + self.lambd * alignment_loss
 
         return loss
-

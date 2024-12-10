@@ -1,8 +1,6 @@
 import warnings
 
 import moabb
-from torch import nn
-import pdb
 
 from skorch.callbacks import WandbLogger
 from skorch.utils import to_numpy
@@ -211,8 +209,6 @@ class HybridEvaluation(BaseEvaluation):
                     yield res
             #break
 
-
-
 class HybridChooseHead(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit',
                  wandb_params=None,
@@ -364,6 +360,7 @@ class HybridChooseHead(BaseEvaluation):
 
                 print(res)
                 yield res
+
 
 
 def active_wandb(args, config, subject, train=True):
