@@ -1,0 +1,14 @@
+,score,time,samples,subject,session,channels,n_sessions,dataset,pipeline
+0,0.66346157,5137.008,6016.0,2,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+1,0.8942308,8974.941,5982.0,3,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+2,0.9230769,6302.1035,5974.0,4,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+3,0.7083333,9258.282,6062.0,5,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+4,0.61858976,7682.7466,5982.0,6,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+5,0.60897434,7016.3164,5982.0,7,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+6,0.6858974,6890.149,6094.0,8,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+7,0.5416667,5594.151,5982.0,9,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+8,0.7307692,4936.955,5982.0,10,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+9,0.55448717,4927.4907,5982.0,11,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+10,0.80128205,1359.4038,5982.0,12,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+11,0.60897434,1330.9739,6022.0,13,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen
+12,0.92948717,1138.3451,5982.0,14,session_E,21,1,Schirrmeister2017,EEGNetShared|_Without_EA-Frozen

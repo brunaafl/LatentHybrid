@@ -1,0 +1,10 @@
+,score,time,samples,subject,session,channels,n_sessions,dataset,pipeline
+0,1.0,1105.7268,2304.0,1,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+1,0.5208333,1037.1986,2304.0,2,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+2,1.0,1036.1221,2304.0,3,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+3,0.9583333,1146.6915,2304.0,4,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+4,1.0,1155.0035,2304.0,5,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+5,0.9583333,985.87537,2304.0,6,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+6,0.5,1029.0511,2304.0,7,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+7,1.0,1063.5126,2304.0,8,session_E,22,2,001-2014,EEGNet|_EA-Frozen
+8,0.9166667,1021.9564,2304.0,9,session_E,22,2,001-2014,EEGNet|_EA-Frozen

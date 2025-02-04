@@ -21,6 +21,8 @@ class JointAlignmentLoss(nn.Module):
         self.centroids = nn.Parameter(torch.from_numpy(centroids).float())
 
         # Initialize MSELoss (for centers) and NLL (for the predictions)
+
+        # Maybe mean squared loss is not the best 
         self.mse_loss = nn.MSELoss()
         self.nll = nn.NLLLoss()
 
