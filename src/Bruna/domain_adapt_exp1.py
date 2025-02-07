@@ -164,8 +164,8 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    print(f"{run_dir}/2-centers_1_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/2-centers_1_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    print(f"{run_dir}/2-centers_lamb5_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/2-centers_lamb5_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
 
     print("---------------------------------------")
 

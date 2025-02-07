@@ -6,7 +6,7 @@ from numpy import random
 
 
 class JointAlignmentLoss(nn.Module):
-    def __init__(self, feat_dim=(16, 1, 251), num_classes=2, centroids=None, lambd = 1):
+    def __init__(self, feat_dim=(16, 1, 251), num_classes=2, centroids=None, lambd = 5):
         super(JointAlignmentLoss, self).__init__()
 
         self.feat_dim=feat_dim
