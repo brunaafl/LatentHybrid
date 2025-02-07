@@ -207,7 +207,7 @@ class HybridEvaluation(BaseEvaluation):
 
                     print(res)
                     yield res
-            break
+            #break
 
 class HybridChooseHead(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit',
