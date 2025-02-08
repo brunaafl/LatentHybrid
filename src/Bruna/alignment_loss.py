@@ -1,12 +1,13 @@
 import torch
+import wandb
 
 import torch.nn as nn
 
 from numpy import random
 
-
+wandb.init(project="centroid_tracking")
 class JointAlignmentLoss(nn.Module):
-    def __init__(self, feat_dim=(16, 1, 251), num_classes=2, centroids=None, lambd = 5):
+    def __init__(self, feat_dim=(16, 1, 251), num_classes=2, centroids=None, lambd = 10):
         super(JointAlignmentLoss, self).__init__()
 
         self.feat_dim=feat_dim
@@ -24,6 +25,7 @@ class JointAlignmentLoss(nn.Module):
 
         # Maybe mean squared loss is not the best 
         self.mse_loss = nn.MSELoss()
+        #self.kl = nn.KLDivLoss()
         self.nll = nn.NLLLoss()
 
         self.lambd = lambd
@@ -42,10 +44,11 @@ class JointAlignmentLoss(nn.Module):
             centers_batch = self.centroids.index_select(0, y_true.long())
 
         # Distance of features to center
-        alignment_loss = self.mse_loss(feat, centers_batch)
+        alignment_loss = self.mse_loss(centers_batch, self.centroids)
+
         # Prediction loss
         pred_loss = self.nll(y_pred, y_true)
 
         loss = pred_loss + self.lambd * alignment_loss
-
+        wandb.log({"centroids": self.centroids.detach().cpu().numpy()})
         return loss

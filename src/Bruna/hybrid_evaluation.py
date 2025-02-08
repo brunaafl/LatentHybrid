@@ -34,7 +34,7 @@ import wandb
 
 moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
-
+wandb.init(project="centroid_tracking")
 class HybridEvaluation(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,
                  **kwargs):
