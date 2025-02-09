@@ -19,7 +19,7 @@ class JointAlignmentLoss(nn.Module):
             else:
                 centroids = random.randn(num_classes, feat_dim)
 
-            self.centroids = nn.Parameter(torch.from_numpy(centroids).float())
+        self.centroids = nn.Parameter(torch.from_numpy(centroids).float())
 
         # Initialize MSELoss (for centers) and NLL (for the predictions)
 
