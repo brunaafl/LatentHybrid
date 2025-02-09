@@ -4,11 +4,13 @@ import wandb
 import numpy as np
 
 from braindecode import EEGClassifier
+from prompt_toolkit.contrib.regular_languages.regex_parser import Lookahead
 
 from sklearn.metrics import accuracy_score
 from skorch.dataset import ValidSplit, unpack_data
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
 from skorch.utils import to_tensor
+from torch import nn
 
 from hybrid_scoring import HybridScoring
 from alignment_loss import JointAlignmentLoss
@@ -98,6 +100,13 @@ def average_acc_scoring(model, x, y_true):
         accuracies_per_subject.append(accuracy_score(true_slice, predictions))
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
 
+def make_lookahead(parameters, optimizer_cls, lr, weight_decay, loss_params=None, **kwargs):
+    if loss_params is not None:
+        parameters = list(parameters) + list(loss_params)  # Include loss parameters in optimization
+
+    optimizer = optimizer_cls(parameters, **kwargs)
+    return Lookahead(optimizer=optimizer, lr=lr, weight_decay=weight_decay)
+
 
 def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_centers=2):
     """
@@ -126,9 +135,9 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_cen
         module=model,
         criterion=JointAlignmentLoss,
         optimizer=torch.optim.AdamW,
-        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
+        train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         batch_size=batch_size,
         max_epochs=config.train.n_epochs,
         callbacks=[EarlyStopping(monitor='valid_loss', patience=patience),
