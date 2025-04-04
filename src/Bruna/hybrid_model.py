@@ -3,6 +3,8 @@ import copy
 import torch
 from torch import nn
 
+from scipy.linalg import inv, sqrtm
+
 from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
 
 from torch.nn import init
@@ -174,6 +176,24 @@ norms = {
 }
 
 
+def latent_euclidean_alignment(model_input):
+    # check that model_input has shape 3
+    if len(model_input.shape) != 3:
+        # if it is not possible, then you dont have the right dimensions to compute it
+        model_input = model_input.squeeze()
+
+    r = 0
+    for trial in model_input:
+        cov = torch.cov(trial)
+        r += cov
+
+    r = r / len(model_input)
+    r_op = torch.linalg.inv(torch.sqrtm(r))
+
+    aligned_input = torch.matmul(r_op, model_input)
+
+    return aligned_input
+
 class HybridModel(nn.Module):
     def __init__(self, num_models, model_type, n_chans, n_classes, input_window_samples, config=None, freeze='freeze',
                  args=None):
@@ -198,6 +218,7 @@ class HybridModel(nn.Module):
                                                     remove_bn=self.args.remove_bn)
         return unique_head
 
+
     def split_input(self, X):
         return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
 
@@ -206,10 +227,15 @@ class HybridModel(nn.Module):
         out, feat = [], []
         for i, model_input in enumerate(inputs):
             temp_unique = self.unique_modules[i](model_input)
+
+            # Add here the latent alignment step
+            temp_unique = latent_euclidean_alignment(temp_unique)
             feat.append(temp_unique)
+
             temp_norm = self.norm(temp_unique)
             temp_shared = self.shared_modules(temp_norm)
             out.append(temp_shared)
+
         result = torch.stack(out)
         feat = torch.stack(feat)
 
@@ -250,6 +276,10 @@ class SpecializedModel(nn.Module):
         out, feat = [], []
         for i, model_input in enumerate(inputs):
             temp_unique = self.unique_modules(model_input)
+
+            # Add here the latent alignment step
+            temp_unique = latent_euclidean_alignment(temp_unique)
+
             feat.append(temp_unique)
             temp_shared = self.shared_modules(temp_unique)
             out.append(temp_shared)
