@@ -5,9 +5,9 @@ import torch.nn as nn
 
 from numpy import random
 
-wandb.init(project="centroid_tracking")
+#wandb.init(project="centroid_tracking")
 class JointAlignmentLoss(nn.Module):
-    def __init__(self, feat_dim=(16, 1, 251), num_classes=1, centroids=None, lambd = 1):
+    def __init__(self, feat_dim=(16, 1, 251), num_classes=1, centroids=None, lambd = 0.1):
         super(JointAlignmentLoss, self).__init__()
 
         self.feat_dim=feat_dim

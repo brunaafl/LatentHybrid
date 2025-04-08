@@ -3,14 +3,15 @@ import copy
 import torch
 from torch import nn
 
-from scipy.linalg import inv, sqrtm
-
-from braindecode.models import EEGNetv4, Deep4Net, ShallowFBCSPNet
+from braindecode.models import  Deep4Net, ShallowFBCSPNet, EEGNetv4
 
 from torch.nn import init
 
 from torch.nn.modules.lazy import LazyModuleMixin
 from torch.nn.parameter import UninitializedParameter
+
+from sqrtm import sqrtm
+#from eegnet import EEGNetv4
 
 
 class LazyLayerNorm(LazyModuleMixin, nn.LayerNorm):
@@ -175,24 +176,48 @@ norms = {
     "LayerNorm": LazyLayerNorm,
 }
 
+class LatentEuclideanAlignment(nn.Module):
 
-def latent_euclidean_alignment(model_input):
-    # check that model_input has shape 3
-    if len(model_input.shape) != 3:
-        # if it is not possible, then you dont have the right dimensions to compute it
-        model_input = model_input.squeeze()
+    def inv_sqrtm(self, matrix, eps=1e-6):
+        # Assume matrix is symmetric and positive semidefinite
+        # Based on python project pytorch-sqrtm
+        eigvals, eigvecs = torch.linalg.eigh(matrix)
+        eigvals = torch.clamp(eigvals, min=eps)
+        D_inv_sqrt = torch.diag(eigvals.rsqrt())
+        return eigvecs @ D_inv_sqrt @ eigvecs.T
 
-    r = 0
-    for trial in model_input:
-        cov = torch.cov(trial)
-        r += cov
+    def forward(self, model_input):
+        if model_input.dim() != 3:
+            model_input = model_input.squeeze()
+        r = 0
+        for trial in model_input:
+            cov = torch.cov(trial)
 
-    r = r / len(model_input)
-    r_op = torch.linalg.inv(torch.sqrtm(r))
+            """
+            # Sample covariance: scale by (n_times - 1)
+            n_times = input_centered.shape[2]
+            covariances = covariances / (n_times - 1)
+        
+            # Normalize each covariance matrix by its trace.
+            trace = covariances.diagonal(dim1=1, dim2=2).sum(dim=1, keepdim=True).unsqueeze(2)
+        
+            covariances = covariances / (
+                trace / covariances.shape[-1]
+            )  # divide by the average trace
+        
+            # Add a small identity matrix for numerical stability.
+            identity = torch.eye(covariances.shape[1], device=inp
+            
+            # Add a small identity matrix for numerical stability.
+            identity = torch.eye(covariances.shape[1], device=input.device).unsqueeze(0)
+            covariances = covariances + epsilon * identity
+            """
+            r += cov
+        r /= len(model_input)
+        r_op = self.inv_sqrtm(r)
 
-    aligned_input = torch.matmul(r_op, model_input)
+        return torch.matmul(r_op, model_input).unsqueeze(2)
 
-    return aligned_input
 
 class HybridModel(nn.Module):
     def __init__(self, num_models, model_type, n_chans, n_classes, input_window_samples, config=None, freeze='freeze',
@@ -209,6 +234,7 @@ class HybridModel(nn.Module):
         self.unique_modules = nn.ModuleList()
         self.freeze = freeze == "freeze"
         self.norm = nn.Identity()
+        self.aligner = LatentEuclideanAlignment()
         for model in range(num_models):
             self.unique_modules.append(self.init_unique_modules(*self._args))
 
@@ -229,7 +255,7 @@ class HybridModel(nn.Module):
             temp_unique = self.unique_modules[i](model_input)
 
             # Add here the latent alignment step
-            temp_unique = latent_euclidean_alignment(temp_unique)
+            temp_unique = self.aligner(temp_unique)
             feat.append(temp_unique)
 
             temp_norm = self.norm(temp_unique)
@@ -266,6 +292,7 @@ class SpecializedModel(nn.Module):
         self.norm = norm_clone
         self.unique_modules = unique_modules
         self.num_models = num_models
+        self.aligner = LatentEuclideanAlignment()
 
     def split_input(self, X):
         return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
@@ -278,7 +305,7 @@ class SpecializedModel(nn.Module):
             temp_unique = self.unique_modules(model_input)
 
             # Add here the latent alignment step
-            temp_unique = latent_euclidean_alignment(temp_unique)
+            temp_unique = self.aligner(temp_unique)
 
             feat.append(temp_unique)
             temp_shared = self.shared_modules(temp_unique)
@@ -291,7 +318,6 @@ class SpecializedModel(nn.Module):
             feat.retain_grad()
 
         return result, feat
-
 
     def predict(self, X):
         result, _ = self.forward(X)

@@ -41,7 +41,10 @@ class HybridClassifier(EEGClassifier):
             if feature.requires_grad:
                 feat_slice.retain_grad()
 
-            loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
+            # FOr JointAlignmentLoss
+            #loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
+            # For normal NLLLoss
+            loss = self.criterion_(y_slice, y_true[:, subject])
 
             losses.append(loss)
 
@@ -133,7 +136,8 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_cen
 
     clf = HybridClassifier(
         module=model,
-        criterion=JointAlignmentLoss,
+        #criterion=JointAlignmentLoss,
+        criterion=nn.NLLLoss,
         optimizer=torch.optim.AdamW,
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
