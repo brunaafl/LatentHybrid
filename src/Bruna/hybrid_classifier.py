@@ -148,7 +148,7 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_cen
                    GradientNormClipping(gradient_clip_value=1),
                    WandbLogger(wandb.run),
                    Checkpoint(monitor="valid_loss_best", load_best=True,
-                              dirname=f"/workspace/params/temptrain-{experiment_name}", f_params="params.pt"),
+                              dirname=f"/root/params/temptrain-{experiment_name}", f_params="params.pt"),
                    HybridScoring(scoring=average_acc_scoring, on_train=True, name='avg_train_acc',
                                  lower_is_better=False),
                    HybridScoring(scoring=average_acc_scoring, on_train=False, name='avg_valid_acc',

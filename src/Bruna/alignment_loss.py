@@ -5,7 +5,6 @@ import torch.nn as nn
 
 from numpy import random
 
-#wandb.init(project="centroid_tracking")
 class JointAlignmentLoss(nn.Module):
     def __init__(self, feat_dim=(16, 1, 251), num_classes=1, centroids=None, lambd = 0.1):
         super(JointAlignmentLoss, self).__init__()
@@ -23,7 +22,7 @@ class JointAlignmentLoss(nn.Module):
 
         # Initialize MSELoss (for centers) and NLL (for the predictions)
 
-        # Maybe mean squared loss is not the best 
+        # Maybe mean squared loss is not the best
         self.mse_loss = nn.MSELoss()
         #self.kl = nn.KLDivLoss()
         self.nll = nn.NLLLoss()
@@ -81,13 +80,11 @@ class JointAlignmentLoss(nn.Module):
         alignment_loss = self.mse_loss(mean_feat, self.centroids)
 
         # Lets do smth different: compute the distance in the spd space
-
+        # In this case, we define this as a layer in the model not a loss
 
         # Prediction loss
         pred_loss = self.nll(y_pred, y_true)
 
         loss = pred_loss + self.lambd * alignment_loss
-        wandb.log({"alignment loss": alignment_loss.detach().cpu().numpy()})
-        wandb.log({"classification loss": pred_loss.detach().cpu().numpy()})
 
         return loss

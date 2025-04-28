@@ -9,6 +9,7 @@ RUN pip3 install -r requirements.txt
 RUN ["mkdir","-m777", "/.mne"]
 RUN ["mkdir","-m777", "/workspace/outputs"]
 RUN ["mkdir","-m777", "/workspace/datasets"]
+RUN ["mkdir","-m777", "/workspace/models"]
 
 ENV WANDB_API_KEY=e7daeba620fc06b90ca2842da9f15beb57a82456
 RUN ["wandb", "login"]
