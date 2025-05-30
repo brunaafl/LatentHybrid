@@ -178,6 +178,7 @@ norms = {
 
 class LatentEuclideanAlignment(nn.Module):
 
+    # How does it backpropagate?????
     def inv_sqrtm(self, matrix, eps=1e-6):
         # Assume matrix is symmetric and positive semidefinite
         # Based on python project pytorch-sqrtm
@@ -212,6 +213,7 @@ class LatentEuclideanAlignment(nn.Module):
             identity = torch.eye(covariances.shape[1], device=input.device).unsqueeze(0)
             covariances = covariances + epsilon * identity
             """
+
             r += cov
         r /= len(model_input)
         r_op = self.inv_sqrtm(r)
@@ -243,7 +245,6 @@ class HybridModel(nn.Module):
                                                     end=model_gen[self.model_type][1],
                                                     remove_bn=self.args.remove_bn)
         return unique_head
-
 
     def split_input(self, X):
         return torch.split(X, int(X.shape[1] / self.num_models), dim=1)

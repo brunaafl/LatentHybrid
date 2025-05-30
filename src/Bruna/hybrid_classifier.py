@@ -42,13 +42,13 @@ class HybridClassifier(EEGClassifier):
                 feat_slice.retain_grad()
 
             # FOr JointAlignmentLoss
-            #loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
+            loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
             # For normal NLLLoss
-            loss = self.criterion_(y_slice, y_true[:, subject])
+            #loss = self.criterion_(y_slice, y_true[:, subject])
 
             losses.append(loss)
 
-        loss = sum(losses)/self.module.num_models
+        loss = sum(losses) / self.module.num_models
 
         return loss
 
@@ -56,8 +56,8 @@ def get_subject_acc_scorer(subject):
     def scoring_for_subject_i(model, x, y_true):
         # Adapt here to deal with (out,feat) tuple
         out = list(model.forward_iter())
-        #out, _ = zip(*results)  # Unpack the results
-        #out = torch.cat(out, dim=0)  # Concatenate each output type
+        # out, _ = zip(*results)  # Unpack the results
+        # out = torch.cat(out, dim=0)  # Concatenate each output type
         y_preds = [z for z in out]
 
         subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
@@ -67,13 +67,12 @@ def get_subject_acc_scorer(subject):
 
     return scoring_for_subject_i
 
-
 def get_subject_loss_scorer(subject, criterion):
     def scoring_for_subject_i(model, x, y_true):
         # Adapt here to deal with (out,feat) tuple
         out = list(model.forward_iter())
-        #out, _ = zip(*results)  # Unpack the results
-        #out = torch.cat(out, dim=0)  # Concatenate each output type
+        # out, _ = zip(*results)  # Unpack the results
+        # out = torch.cat(out, dim=0)  # Concatenate each output type
         y_preds = [z for z in out]
 
         true_slice = to_tensor(y_true[:, subject], device=model.device)
@@ -82,18 +81,16 @@ def get_subject_loss_scorer(subject, criterion):
 
     return scoring_for_subject_i
 
-
 def average_acc_scoring(model, x, y_true):
     # Adapt here to deal with (out,feat) tuple
     out = list(model.forward_iter())
-    #print(type(results))
-    #print(len(results))
-    #out, _ = results[0] # Unpack the results
-    #print(len(out))
-    #out = torch.cat(out, dim=0) # Concatenate each output type
-    #print(out.shape)
+    # print(len(results))
+    # out, _ = results[0] # Unpack the results
+    # print(len(out))
+    # out = torch.cat(out, dim=0) # Concatenate each output type
+    # print(out.shape)
     y_preds = [z for z in out]
-    #print(len(y_preds))
+    # print(len(y_preds))
 
     accuracies_per_subject = []
     for subject in range(len(y_preds)):
@@ -102,13 +99,6 @@ def average_acc_scoring(model, x, y_true):
         predictions = np.argmax(subject_slice, axis=1)
         accuracies_per_subject.append(accuracy_score(true_slice, predictions))
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
-
-def make_lookahead(parameters, optimizer_cls, lr, weight_decay, loss_params=None, **kwargs):
-    if loss_params is not None:
-        parameters = list(parameters) + list(loss_params)  # Include loss parameters in optimization
-
-    optimizer = optimizer_cls(parameters, **kwargs)
-    return Lookahead(optimizer=optimizer, lr=lr, weight_decay=weight_decay)
 
 
 def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_centers=2):
@@ -136,8 +126,8 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_cen
 
     clf = HybridClassifier(
         module=model,
-        #criterion=JointAlignmentLoss,
-        criterion=nn.NLLLoss,
+        criterion=JointAlignmentLoss,
+        #criterion=nn.NLLLoss,
         optimizer=torch.optim.AdamW,
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,

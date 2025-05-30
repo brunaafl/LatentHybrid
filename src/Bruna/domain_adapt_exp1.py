@@ -153,10 +153,18 @@ def main(args):
         len_run=len_run,
         wandb_params=(args, config),
         run_dir=run_dir,
-        mode=args.mode
+        mode=args.mode,
+        remove_bn=args.remove_bn
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
+
+    if args.remove_bn=='True':
+        bn = 'nobn'
+    else:
+        bn = 'bn'
+
+    print(f"(6) Remove batch normalization? {args.remove_bn} - {bn}")
 
     results = evaluation.process(pipes)
     print(results.head())
@@ -164,13 +172,13 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    print(f"{run_dir}/latent_alignment_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/latent_alignment_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    print(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+
+    #print(f"{run_dir}/2-centers_lr10_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    #results.to_csv(f"{run_dir}/2-centers_lr10_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
 
     print("---------------------------------------")
-
-    # return results
-
 
 # Press the green button in the gutter to run the script.
 if __name__ == "__main__":

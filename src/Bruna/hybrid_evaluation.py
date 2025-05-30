@@ -38,7 +38,7 @@ moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
 
 class HybridEvaluation(BaseEvaluation):
-    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,
+    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,remove_bn='False',
                  **kwargs):
         add_cols = ["head"]
         super(HybridEvaluation, self).__init__(additional_columns=add_cols, *args, **kwargs)
@@ -48,6 +48,7 @@ class HybridEvaluation(BaseEvaluation):
         self.wandb_params = wandb_params
         self.run_dir = run_dir
         self.mode = mode
+        self.remove_bn = remove_bn
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
@@ -120,17 +121,30 @@ class HybridEvaluation(BaseEvaluation):
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 
-                model_dir = Path(f'/workspace/models/{self.wandb_params[1].train.experiment_name}_nobn_ea-{self.EA_in_eval}')
-                model_dir.mkdir(parents=True, exist_ok=True)
-                print(f"(1) Model saved at {model_dir}")
-                torch.save(model['Net'].module.state_dict(), model_dir / f'best_model_{subject_num}-shared.pth')
+                if self.remove_bn=='True':
+                    bn = 'nobn'
+                else:
+                    bn='bn'
 
-                artifact = wandb.Artifact(f"{self.wandb_params[1].train.experiment_name}_model", type="model")
+                if self.EA_in_eval:
+                    ea = 'ea'
+                else:
+                    ea = 'noea'
+
+                model_dir = Path(f'/workspace/models/{self.wandb_params[1].train.experiment_name}_{bn}_{ea}')
+                model_path = model_dir / f'best_model_{subject_num}-shared.pth'
+                model_dir.mkdir(parents=True, exist_ok=True)
+
+                print(f"(1) Model saved at {model_dir}")
+                torch.save(model['Net'].module.state_dict(), model_path)
+
+                artifact = wandb.Artifact(f'best_model_{subject_num}-shared.pth', type="model")
+                artifact.add_file(str(model_path))
                 wandb.log_artifact(artifact)
+
                 wandb.finish()
 
                 duration = time() - t_start
-
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
@@ -175,6 +189,7 @@ class HybridEvaluation(BaseEvaluation):
                         X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
 
                         # Fix dimension and predict
+                        eval_pipe['Net'].module.eval()
                         pred,_ = eval_pipe['Net'].forward(X_trn)
                         y_pred = pred.flatten(0, 1).argmax(dim=1)
                         # Compute accuracy
@@ -191,6 +206,9 @@ class HybridEvaluation(BaseEvaluation):
                         duration = duration + time() - t_start
 
                         torch.save(eval_clf['Net'].module.state_dict(), model_dir / f'best_model_{subject_num}-head-{subj}_ft.pth')
+                        artifact = wandb.Artifact(f'best_model_{subject_num}-head-{subj}_ft.pth', type="model")
+                        artifact.add_file(str(model_dir / f'best_model_{subject_num}-head-{subj}_ft.pth'))
+                        wandb.log_artifact(artifact)
 
                         eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
