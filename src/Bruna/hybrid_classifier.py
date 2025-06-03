@@ -29,7 +29,6 @@ class HybridClassifier(EEGClassifier):
         y_pred, feature = y_pred
         y_true = to_tensor(y_true, device=self.device)
         losses = []
-
         for subject in range(y_pred.shape[0]):
 
             # I actually want the features before fc, or just after unique
@@ -42,9 +41,9 @@ class HybridClassifier(EEGClassifier):
                 feat_slice.retain_grad()
 
             # FOr JointAlignmentLoss
-            loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
+            #loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
             # For normal NLLLoss
-            #loss = self.criterion_(y_slice, y_true[:, subject])
+            loss = self.criterion_(y_slice, y_true[:, subject])
 
             losses.append(loss)
 
@@ -71,7 +70,7 @@ def get_subject_loss_scorer(subject, criterion):
     def scoring_for_subject_i(model, x, y_true):
         # Adapt here to deal with (out,feat) tuple
         out = list(model.forward_iter())
-        # out, _ = zip(*results)  # Unpack the results
+        # out, _ = zip(*out)  # Unpack the results
         # out = torch.cat(out, dim=0)  # Concatenate each output type
         y_preds = [z for z in out]
 

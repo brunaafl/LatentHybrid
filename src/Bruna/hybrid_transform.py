@@ -54,8 +54,8 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
                 self.groups = groups_aux
             else:
                 n = X_data.shape[0]
-                q = n//self.EA_len_run
-                d = int(q*self.EA_len_run)
+                q = n//24
+                d = int(q*24)
 
                 X_aux = X_data[:d,:,:]
                 labels_aux = self.labels[:d]
