@@ -6,7 +6,7 @@ import torch.nn as nn
 from numpy import random
 
 class JointAlignmentLoss(nn.Module):
-    def __init__(self, feat_dim=(16, 1, 501), num_classes=2, centroids=None, lambd = 10):
+    def __init__(self, feat_dim=(16, 1, 501), num_classes=2, centroids=None, lambd = 1):
         super(JointAlignmentLoss, self).__init__()
 
         self.feat_dim=feat_dim
