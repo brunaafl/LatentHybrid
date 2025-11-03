@@ -111,6 +111,7 @@ def main(args):
     clf = define_hybrid_clf(model, config, experiment_name, criterion_type)
 
     print(f"(3) Created clf {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
+    print(f"Type of loss function: {criterion_type}")
 
     runs = meta.run.values
     sessions = meta.session.values
@@ -180,8 +181,8 @@ def main(args):
 
     #print(f"{run_dir}/2-centers_lr1_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
     #results.to_csv(f"{run_dir}/2-centers_lr1_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
     print("---------------------------------------")
 
 # Press the green button in the gutter to run the script.

@@ -259,12 +259,17 @@ class HybridModel(nn.Module):
         self.unique_modules = nn.ModuleList()
         self.freeze = freeze == "freeze"
         self.norm = nn.Identity()
-        self.aligner = LatentEuclideanAlignment()
+        self.lea = self.args.remove_bn == 'LEA'
+        if self.lea:
+            self.aligner = LatentEuclideanAlignment()
         for model in range(num_models):
             self.unique_modules.append(self.init_unique_modules(*self._args))
 
     def init_unique_modules(self, n_chans, n_classes, input_window_samples):
-        unique_head = model_gen[self.model_type][0](n_chans, n_classes, input_window_samples, self.config,
+        unique_head = model_gen[self.model_type][0](n_chans,
+                                                    n_classes,
+                                                    input_window_samples,
+                                                    self.config,
                                                     end=model_gen[self.model_type][1],
                                                     remove_bn=self.args.remove_bn)
         return unique_head
@@ -279,7 +284,8 @@ class HybridModel(nn.Module):
             temp_unique = self.unique_modules[i](model_input)
 
             # Add here the latent alignment step
-            #temp_unique = self.aligner(temp_unique)
+            if self.lea:
+                temp_unique = self.aligner(temp_unique)
             feat.append(temp_unique)
 
             temp_norm = self.norm(temp_unique)
@@ -304,19 +310,21 @@ class HybridModel(nn.Module):
         cloned_layers = copy.deepcopy(self.shared_modules)
         norm_clone = copy.deepcopy(self.norm)
         if self.freeze:
-            print(self.freeze)
             cloned_layers.requires_grad_(False)
-        return SpecializedModel(new_layers, norm_clone, cloned_layers)
+        return SpecializedModel(new_layers, norm_clone, cloned_layers, self.lea)
 
 
 class SpecializedModel(nn.Module):
-    def __init__(self, unique_modules, norm_clone, cloned_modules, num_models=1):
+    def __init__(self, unique_modules, norm_clone, cloned_modules, lea, num_models=1):
         super(SpecializedModel, self).__init__()
         self.shared_modules = cloned_modules
         self.norm = norm_clone
         self.unique_modules = unique_modules
         self.num_models = num_models
-        self.aligner = LatentEuclideanAlignment()
+        self.lea = lea
+        if self.lea:
+            self.aligner = LatentEuclideanAlignment()
+
 
     def split_input(self, X):
         return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
@@ -329,7 +337,8 @@ class SpecializedModel(nn.Module):
             temp_unique = self.unique_modules(model_input)
 
             # Add here the latent alignment step
-            #temp_unique = self.aligner(temp_unique)
+            if self.lea:
+                temp_unique = self.aligner(temp_unique)
 
             feat.append(temp_unique)
             temp_shared = self.shared_modules(temp_unique)

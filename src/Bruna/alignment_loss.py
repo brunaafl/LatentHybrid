@@ -6,10 +6,12 @@ import torch.nn as nn
 from numpy import random
 
 class JointAlignmentLoss(nn.Module):
-    def __init__(self, feat_dim=(16, 1, 501), num_classes=2, centroids=None, lambd = 1):
+    def __init__(self, feat_dim=(16, 1, 251), num_classes=2, centroids=None, lambd = 1):
         super(JointAlignmentLoss, self).__init__()
 
-        self.feat_dim=feat_dim
+        # feat_dim=(16, 1, 501) for schirmeister and (16, 1, 251) for bnci
+
+        self.feat_dim = feat_dim
 
         # If num_classes=1, align every subject to the same center, regardless of class
         if centroids is None:

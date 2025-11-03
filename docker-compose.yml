@@ -59,7 +59,7 @@ services:
               device_ids: [ '1' ]
               capabilities: [ gpu ]
 
-## Alignment loss
+## Hybrid
   hybrid-EA-freeze-bn:
     profiles: ["Hybrid-Center-bn", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
