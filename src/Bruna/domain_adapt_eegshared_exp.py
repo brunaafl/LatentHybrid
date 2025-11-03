@@ -20,7 +20,6 @@ from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetE
 from shared_evaluation import SharedEvaluation, EEGSharedEvaluation
 from paradigm import MotorImagery_
 from hybrid_transform import HybridAggregateTransform
-from hybrid_model import SharedModel
 from hybrid_classifier import define_hybrid_clf
 from train import define_clf, init_model, define_clf_hybrid
 from util import parse_args, set_determinism, set_run_dir
@@ -124,7 +123,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/eegclassifier_{experiment_name}_results.csv")
+    results.to_csv(f"{run_dir}/eegclassifier_{args.criterion_type}_{experiment_name}_results.csv")
 
     print("---------------------------------------")
 

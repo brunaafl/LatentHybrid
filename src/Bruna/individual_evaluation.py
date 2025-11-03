@@ -166,14 +166,12 @@ def active_wandb(args, config, subject, train=True):
         "weight_decay": config.train.weight_decay,
         "subject": subject,
         "train": train,
-        "uniquenorm": args.uniquenorm,
-        "sharednorm": args.sharednorm,
     }
 
     run = wandb.init(
         project=f"{args.model}",
         group=config.train.experiment_name,
-        name=f"{subject}-Individual:{args.sharednorm}-Unique:{args.uniquenorm}",
+        name=f"{subject}-Head-{args.ea}",
         config=wconfig
     )
     return run
@@ -195,14 +193,12 @@ def active_wandb_eval(args, config, subject, subj, train=True):
         "head": subj,
         "subject": subject,
         "train": train,
-        "uniquenorm": args.uniquenorm,
-        "sharednorm": args.sharednorm,
     }
 
     run = wandb.init(
         project=f"{args.model}",
         group=config.train.experiment_name,
-        name=f"{subject}-Head-{subj}:{args.sharednorm}-Unique:{args.uniquenorm}",
+        name=f"{subject}-Head-{subj}-{args.ea}",
         config=wconfig
     )
     return run

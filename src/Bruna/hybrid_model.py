@@ -112,22 +112,43 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
         drop_prob=drop_prob
     )
 
-    if end == 0:
-        return nn.Identity()
+    if end == 19 and start == 0:
 
-    if end == len(list(temp_model.children())) and start == 0:
+        if remove_bn == 'LEA':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = LatentEuclideanAlignment()
+        elif remove_bn == 'True':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = nn.Identity()
+
         return temp_model
+
+    if start==0 and end == 0:
+        return nn.Identity()
 
     net = list(temp_model.children())[start:end]
     if remove_bn == 'True':
         for i, module in enumerate(net):
             if isinstance(net[i], nn.BatchNorm2d):
                 net[i] = nn.Identity()
+    elif remove_bn == 'LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                net[i] = LatentEuclideanAlignment()
     elif remove_bn == 'One-bn':
         for i, module in enumerate(net):
             if isinstance(net[i], nn.BatchNorm2d):
                 if i == len(net) - 1 and start == 0:
                     net[i] = net[i]
+                else:
+                    net[i] = nn.Identity()
+    elif remove_bn == 'One-LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                if i == len(net) - 1 and start == 0:
+                    net[i] = LatentEuclideanAlignment()
                 else:
                     net[i] = nn.Identity()
     return nn.Sequential(*net)
@@ -191,7 +212,9 @@ class LatentEuclideanAlignment(nn.Module):
         if model_input.dim() != 3:
             model_input = model_input.squeeze()
         r = 0
-        for trial in model_input:
+        print(model_input.shape)
+        for i in range(len(model_input)):
+            trial = model_input[i]
             cov = torch.cov(trial)
 
             """
@@ -256,7 +279,7 @@ class HybridModel(nn.Module):
             temp_unique = self.unique_modules[i](model_input)
 
             # Add here the latent alignment step
-            temp_unique = self.aligner(temp_unique)
+            #temp_unique = self.aligner(temp_unique)
             feat.append(temp_unique)
 
             temp_norm = self.norm(temp_unique)
@@ -306,7 +329,7 @@ class SpecializedModel(nn.Module):
             temp_unique = self.unique_modules(model_input)
 
             # Add here the latent alignment step
-            temp_unique = self.aligner(temp_unique)
+            #temp_unique = self.aligner(temp_unique)
 
             feat.append(temp_unique)
             temp_shared = self.shared_modules(temp_unique)

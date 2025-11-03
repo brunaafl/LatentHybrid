@@ -38,7 +38,7 @@ moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
 
 class HybridEvaluation(BaseEvaluation):
-    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,remove_bn='False',
+    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,remove_bn='False', seed=0, criterion_type=None,
                  **kwargs):
         add_cols = ["head"]
         super(HybridEvaluation, self).__init__(additional_columns=add_cols, *args, **kwargs)
@@ -49,6 +49,8 @@ class HybridEvaluation(BaseEvaluation):
         self.run_dir = run_dir
         self.mode = mode
         self.remove_bn = remove_bn
+        self.criterion_type = criterion_type
+        self.seed = seed
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
@@ -156,7 +158,7 @@ class HybridEvaluation(BaseEvaluation):
                     eval_model.num_models = 1
 
                     eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
-                                                        experiment_name='Evaluation')
+                                                        experiment_name='Evaluation', criterion_type=self.criterion_type,)
                     if self.EA_in_eval:
                         create_dataset = HybridAggregateTransform(EA_len_run=self.len_run, data_code=dataset.code)
                     else:
@@ -408,14 +410,12 @@ def active_wandb(args, config, subject, train=True):
         "weight_decay": config.train.weight_decay,
         "subject": subject,
         "train": train,
-        "uniquenorm": args.uniquenorm,
-        "sharednorm": args.sharednorm,
     }
 
     run = wandb.init(
         project=f"{args.model}",
         group=config.train.experiment_name,
-        name=f"{subject}-Shared:{args.sharednorm}-Unique:{args.uniquenorm}",
+        name=f"{subject}-Shared:{args.ea}",
         config=wconfig
     )
     return run
@@ -437,14 +437,12 @@ def active_wandb_eval(args, config, subject, subj, train=True):
         "head": subj,
         "subject": subject,
         "train": train,
-        "uniquenorm": args.uniquenorm,
-        "sharednorm": args.sharednorm,
     }
 
     run = wandb.init(
         project=f"{args.model}",
         group=config.train.experiment_name,
-        name=f"{subject}-Head-{subj}:{args.sharednorm}-Unique:{args.uniquenorm}",
+        name=f"{subject}-Head-{subj}:{args.ea}",
         config=wconfig
     )
     return run

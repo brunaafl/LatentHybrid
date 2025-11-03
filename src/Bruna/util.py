@@ -183,23 +183,15 @@ def parse_args():
         type=str,
         default='False',
         help="To remove batchnormalization layers",
-        choices=['True', 'False', 'One-bn'],
+        choices=['True', 'False', 'One-bn', 'LEA', 'One-LEA'],
     )
 
     parser.add_argument(
-        "--sharednorm",
+        "--criterion_type",
         type=str,
-        help="select norm for shared",
-        default="Identity",
-        choices=["Identity", "BatchNorm2d", "InstanceNorm2d", "LayerNorm"],
-    )
-
-    parser.add_argument(
-        "--uniquenorm",
-        type=str,
-        help="select norm for unique",
-        default="Identity",
-        choices=["Identity", "BatchNorm2d", "InstanceNorm2d", "LayerNorm"],
+        help="Select a loss function",
+        default="AlignmentLoss",
+        choices=["AlignmentLoss", "NLLLoss"],
     )
 
     parser.add_argument(

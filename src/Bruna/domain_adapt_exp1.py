@@ -106,7 +106,9 @@ def main(args):
     torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
 
     # Create Classifier
-    clf = define_hybrid_clf(model, config, experiment_name)
+    print(args)
+    criterion_type = args.criterion_type  # Define the loss function to use
+    clf = define_hybrid_clf(model, config, experiment_name, criterion_type)
 
     print(f"(3) Created clf {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
@@ -154,7 +156,8 @@ def main(args):
         wandb_params=(args, config),
         run_dir=run_dir,
         mode=args.mode,
-        remove_bn=args.remove_bn
+        remove_bn=args.remove_bn,
+        criterion_type = args.criterion_type
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
@@ -174,9 +177,11 @@ def main(args):
     print(experiment_name)
     #print(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
     #results.to_csv(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    print(f"{run_dir}/2-centers_lr10_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/2-centers_lr10_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
 
+    #print(f"{run_dir}/2-centers_lr1_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    #results.to_csv(f"{run_dir}/2-centers_lr1_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
     print("---------------------------------------")
 
 # Press the green button in the gutter to run the script.

@@ -4,24 +4,28 @@ import wandb
 import numpy as np
 
 from braindecode import EEGClassifier
-from prompt_toolkit.contrib.regular_languages.regex_parser import Lookahead
 
 from sklearn.metrics import accuracy_score
 from skorch.dataset import ValidSplit, unpack_data
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
 from skorch.utils import to_tensor
-from torch import nn
+from torch.nn import NLLLoss
 
 from hybrid_scoring import HybridScoring
 from alignment_loss import JointAlignmentLoss
 
+criterion_types = {'AlignmentLoss':JointAlignmentLoss, 'NLLLoss':NLLLoss}
 
 # Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):
 
-    def __init__(self, lambd=0.001, *args, **kwargs):
+    def __init__(self, criterion_type, lambd=0.001, *args, **kwargs):
         super(HybridClassifier, self).__init__(*args, **kwargs)
+        self.criterion_type = criterion_type
         self.lambd = lambd
+
+        if self.criterion_type not in criterion_types.keys():
+            AssertionError('criterion_type must be one of {}'.format(criterion_types.keys()))
 
     def get_loss(self, y_pred, y_true, *args, **kwargs):
 
@@ -41,9 +45,11 @@ class HybridClassifier(EEGClassifier):
                 feat_slice.retain_grad()
 
             # FOr JointAlignmentLoss
-            #loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
+            if self.criterion_type == 'AlignmentLoss':
+                loss = self.criterion_(feat_slice, y_slice, y_true[:, subject])
             # For normal NLLLoss
-            loss = self.criterion_(y_slice, y_true[:, subject])
+            else:
+                loss = self.criterion_(y_slice, y_true[:, subject])
 
             losses.append(loss)
 
@@ -55,8 +61,6 @@ def get_subject_acc_scorer(subject):
     def scoring_for_subject_i(model, x, y_true):
         # Adapt here to deal with (out,feat) tuple
         out = list(model.forward_iter())
-        # out, _ = zip(*results)  # Unpack the results
-        # out = torch.cat(out, dim=0)  # Concatenate each output type
         y_preds = [z for z in out]
 
         subject_slice = np.exp(y_preds[subject].detach().cpu().numpy())
@@ -70,8 +74,6 @@ def get_subject_loss_scorer(subject, criterion):
     def scoring_for_subject_i(model, x, y_true):
         # Adapt here to deal with (out,feat) tuple
         out = list(model.forward_iter())
-        # out, _ = zip(*out)  # Unpack the results
-        # out = torch.cat(out, dim=0)  # Concatenate each output type
         y_preds = [z for z in out]
 
         true_slice = to_tensor(y_true[:, subject], device=model.device)
@@ -83,13 +85,7 @@ def get_subject_loss_scorer(subject, criterion):
 def average_acc_scoring(model, x, y_true):
     # Adapt here to deal with (out,feat) tuple
     out = list(model.forward_iter())
-    # print(len(results))
-    # out, _ = results[0] # Unpack the results
-    # print(len(out))
-    # out = torch.cat(out, dim=0) # Concatenate each output type
-    # print(out.shape)
     y_preds = [z for z in out]
-    # print(len(y_preds))
 
     accuracies_per_subject = []
     for subject in range(len(y_preds)):
@@ -100,12 +96,13 @@ def average_acc_scoring(model, x, y_true):
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
 
 
-def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_centers=2):
+def define_hybrid_clf(model, config, experiment_name, criterion_type):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
     ----------
-    experiment_name
+    criterion_type: string with the type of loss to use
+    experiment_name: string with the name of the experiment
     model: pytorch model
     config: dict with the configuration parameters
     Returns
@@ -123,10 +120,11 @@ def define_hybrid_clf(model, config, experiment_name, feat_dim=(16,1,251), n_cen
     scoring_callbacks = [HybridScoring(scoring=get_subject_acc_scorer(i), on_train=False, name=f'{i:02d}_valid_acc',
                                        lower_is_better=False) for i in range(model.num_models)]
 
+    criterion = criterion_types[criterion_type]
     clf = HybridClassifier(
         module=model,
-        criterion=JointAlignmentLoss,
-        #criterion=nn.NLLLoss,
+        criterion=criterion,
+        criterion_type=criterion_type,
         optimizer=torch.optim.AdamW,
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,

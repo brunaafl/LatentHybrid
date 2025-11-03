@@ -14,13 +14,14 @@ from alignment import split_runs_EA
 
 
 class HybridAggregateTransform(BaseEstimator, TransformerMixin):
-    def __init__(self, EA_len_run=None, data_code = None, kw_args=None, shuffle=False):
+    def __init__(self, EA_len_run=None, data_code = None, kw_args=None, shuffle=False, sample=None):
         self.kw_args = kw_args
         self.use_EA = EA_len_run is not None
         self.EA_len_run = EA_len_run
         self.n_trials_used = 0
         self.shuffle = shuffle
         self.data_code = data_code
+        self.sample = sample
 
     def fit(self, X, y=None, subject_groups=None, info=None, labels=None):
         self.labels = labels
@@ -28,43 +29,72 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
         self.info = info
         return self
 
+    def sample_Schirrmeister(self, X):
+        X_data = X.get_data()
+        if len(np.unique(self.groups)) > 1:
+            X_aux = []
+            labels_aux = []
+            groups_aux = []
+            for subj in np.unique(self.groups):
+                X_subj = X_data[self.groups == subj]
+                X_subj = X_subj[:408, :, :]
+                y_subj = self.labels[self.groups == subj]
+                y_subj = y_subj[:408]
+                groups_subj = self.groups[self.groups == subj]
+                groups_subj = groups_subj[:408]
+                X_aux.append(X_subj)
+                labels_aux.append(y_subj)
+                groups_aux.append(groups_subj)
+            X_aux = np.concatenate(X_aux)
+            labels_aux = np.concatenate(labels_aux)
+            groups_aux = np.concatenate(groups_aux)
+            self.labels = labels_aux
+            self.groups = groups_aux
+        else:
+            n = X_data.shape[0]
+            q = n // 24
+            d = int(q * 24)
+
+            X_aux = X_data[:d, :, :]
+            labels_aux = self.labels[:d]
+            groups_aux = self.groups[:d]
+            self.labels = labels_aux
+            self.groups = groups_aux
+
+        return X_aux
+
+    def sample_data(self, X):
+
+        sample = self.sample
+        X_aux = []
+        m = self.EA_len_run
+        n = X.shape[0]
+        n_samples = int(m * sample)
+
+        for k in range(int(n / m)):
+            run = X[k * m:(k + 1) * m]
+            idx = np.random.randint(0, m, n_samples)
+            X_aux.append(run[idx])
+        X_EA = np.concatenate(X_aux)
+        return X_EA
+
     def transform(self, X, y=None):
         initial_time = time()
 
         if self.data_code == 'Schirrmeister2017':
-            X_data = X.get_data()
-            if len(np.unique(self.groups))>1:
-                X_aux = []
-                labels_aux = []
-                groups_aux = []
-                for subj in np.unique(self.groups):
-                    X_subj = X_data[self.groups == subj]
-                    X_subj = X_subj[:408,:,:]
-                    y_subj = self.labels[self.groups == subj]
-                    y_subj = y_subj[:408]
-                    groups_subj = self.groups[self.groups == subj]
-                    groups_subj = groups_subj[:408]
-                    X_aux.append(X_subj)
-                    labels_aux.append(y_subj)
-                    groups_aux.append(groups_subj)
-                X_aux = np.concatenate(X_aux)
-                labels_aux = np.concatenate(labels_aux)
-                groups_aux = np.concatenate(groups_aux)
-                self.labels = labels_aux
-                self.groups = groups_aux
-            else:
-                n = X_data.shape[0]
-                q = n//24
-                d = int(q*24)
-
-                X_aux = X_data[:d,:,:]
-                labels_aux = self.labels[:d]
-                groups_aux = self.groups[:d]
-                self.labels = labels_aux
-                self.groups = groups_aux
+            X_aux = self.sample_Schirrmeister(X)
 
         else:
             X_aux = X.get_data()
+
+        if self.sample is not None:
+            if type(self.sample)==float:
+                X_aux, labels_aux, groups_aux = self.sample_data(X_aux)
+                self.labels = labels_aux
+                self.groups = groups_aux
+
+                # update the size of the run
+                self.EA_len_run = int(self.EA_len_run * self.sample)
 
         # If EA is required
         if self.use_EA:
