@@ -91,7 +91,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-freeze-nllloss-nobn:
-    profiles: [ "Hybrid-Center-ea", "EA", "Freeze", "Hybrid-BN", "Hybrid-NOBN-EA" ]
+    profiles: [ "Hybrid-ea", "EA", "Freeze", "Hybrid-BN", "Hybrid-NOBN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -136,7 +136,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-EA-freeze-lea:
-    profiles: [ "Hybrid-Center", "EA", "Freeze", "Hybrid-BN", "Hybrid-NOBN-EA" ]
+    profiles: [ "Hybrid-Center-lea", "EA", "Freeze", "Hybrid-BN", "Hybrid-NOBN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -381,7 +381,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noEA-freeze-lea:
-    profiles: [ "Hybrid-Center-noea", "No-EA", "freeze", "BN", "Hybrid-BN" ]
+    profiles: [ "Hybrid-Center-lea", "No-EA", "freeze", "BN", "Hybrid-BN" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -460,7 +460,6 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-
   hybrid-noEA-nofreeze-bn-robin:
     profiles: ["Hybrid", "No-EA", "No-freeze", "BN", "Hybrid-BN-NoFreeze", ]
     extends:
@@ -479,7 +478,7 @@ services:
 
   jupyter:
     profiles: ["jupyter"]
-    #user: "0:0"
+    user: "${MYUID}:${MYGID}"
     extends:
       file: base.yml
       service: base-experiment
