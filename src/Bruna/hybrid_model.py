@@ -209,10 +209,10 @@ class LatentEuclideanAlignment(nn.Module):
         return eigvecs @ D_inv_sqrt @ eigvecs.T
 
     def forward(self, model_input):
+        print(model_input.dim())
         if model_input.dim() != 3:
             model_input = model_input.squeeze()
         r = 0
-        print(model_input.shape)
         for i in range(len(model_input)):
             trial = model_input[i]
             cov = torch.cov(trial)
@@ -282,12 +282,6 @@ class HybridModel(nn.Module):
         out, feat = [], []
         for i, model_input in enumerate(inputs):
             temp_unique = self.unique_modules[i](model_input)
-
-            # Add here the latent alignment step
-            if self.lea:
-                temp_unique = self.aligner(temp_unique)
-            feat.append(temp_unique)
-
             temp_norm = self.norm(temp_unique)
             temp_shared = self.shared_modules(temp_norm)
             out.append(temp_shared)
@@ -334,12 +328,8 @@ class SpecializedModel(nn.Module):
         inputs = self.split_input(x)
         out, feat = [], []
         for i, model_input in enumerate(inputs):
+            print(model_input.shape)
             temp_unique = self.unique_modules(model_input)
-
-            # Add here the latent alignment step
-            if self.lea:
-                temp_unique = self.aligner(temp_unique)
-
             feat.append(temp_unique)
             temp_shared = self.shared_modules(temp_unique)
             out.append(temp_shared)
