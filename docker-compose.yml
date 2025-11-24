@@ -90,6 +90,21 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+  hybrid-EA-freeze-nllloss-bn-Choose:
+    profiles: ["Normal-Choose", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-freeze-bn-nllloss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type NLLLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
   hybrid-EA-freeze-nllloss-nobn:
     profiles: [ "Hybrid-ea", "EA", "Freeze", "Hybrid-BN", "Hybrid-NOBN-EA" ]
     extends:
@@ -334,6 +349,22 @@ services:
             - driver: nvidia
               device_ids: ['1']
               capabilities: [ gpu ]
+
+  hybrid-noEA-freeze-nllloss-bn-Choose:
+    profiles: ["Normal-Choose", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-enoa-freeze-bn-nllloss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type NLLLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
 
   hybrid-noEA-freeze-nobn:
     profiles: [ "Hybrid-Center-noea", "No-EA", "freeze", "BN", "Hybrid-BN" ]

@@ -243,7 +243,7 @@ class HybridEvaluation(BaseEvaluation):
 
 class HybridChooseHead(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit',
-                 wandb_params=None,
+                 wandb_params=None,criterion_type=None, remove_bn=False,
                  **kwargs):
         add_cols = ["head"]
         super(HybridChooseHead, self).__init__(additional_columns=add_cols, *args, **kwargs)
@@ -253,6 +253,8 @@ class HybridChooseHead(BaseEvaluation):
         self.wandb_params = wandb_params
         self.run_dir = run_dir
         self.mode = mode
+        self.criterion_type = criterion_type
+        self.remove_bn = remove_bn
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
@@ -324,6 +326,23 @@ class HybridChooseHead(BaseEvaluation):
                 #pdb.set_trace()
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
+
+                if self.remove_bn=='True':
+                    bn = 'nobn'
+                else:
+                    bn='bn'
+
+                if self.EA_in_eval:
+                    ea = 'ea'
+                else:
+                    ea = 'noea'
+
+                torch.save(model.state_dict(), f"best_model_{subject_num}-shared.pth")
+
+                artifact = wandb.Artifact(f"best_model_{subject_num}-shared", type="model")
+                artifact.add_file(f"best_model_{subject_num}-shared.pth")
+                wandb.log_artifact(artifact)
+
                 wandb.finish()
 
                 duration = time() - t_start
@@ -343,16 +362,17 @@ class HybridChooseHead(BaseEvaluation):
                 # Choose best head based on the inference
                 for subj in range(copy_model['Net'].module.num_models):
 
+                    copy_model = deepcopy(model)
                     eval_model = copy_model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
 
                     copy_eva_model = deepcopy(eval_model)
-                    eval_classifier = define_hybrid_clf(copy_eva_model, self.eval_config,
-                                                        experiment_name='Evaluation')
+                    eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
+                                                        experiment_name='Evaluation', criterion_type=self.criterion_type,)
                     if self.EA_in_eval:
-                        create_dataset = HybridAggregateTransform(EA_len_run=self.len_run)
+                        create_dataset = HybridAggregateTransform(EA_len_run=self.len_run, data_code=dataset.code)
                     else:
-                        create_dataset = HybridAggregateTransform()
+                        create_dataset = HybridAggregateTransform(data_code=dataset.code)
                     eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
                     # Inference on the calibration set
@@ -368,31 +388,26 @@ class HybridChooseHead(BaseEvaluation):
                     X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix]])
 
                     # Fix dimension and predict
-                    y_pred = eval_pipe['Net'].forward(X_trn).flatten(0, 1).argmax(dim=1)
+                    eval_pipe['Net'].module.eval()
+                    pred, _ = eval_pipe['Net'].forward(X_trn)
+                    y_pred = pred.flatten(0, 1).argmax(dim=1)
                     # Compute accuracy
                     score = accuracy_score(y[test[ix]], y_pred)
-                    print(score)
 
-                    if score > best_score:
-                        best_score = score
-                        best_subject = subj
-                        print(best_subject)
+                    res = {
+                        "time": duration,
+                        "dataset": dataset,
+                        "head": best_subject,
+                        "subject": subject,
+                        "session": 'session_E',
+                        "score": score,
+                        "n_samples": len(train),
+                        "n_channels": nchan,
+                        "pipeline": name,
+                    }
 
-                res = {
-                    "time": duration,
-                    "dataset": dataset,
-                    "head": best_subject,
-                    "subject": subject,
-                    "session": 'session_E',
-                    "score": best_score,
-                    "n_samples": len(train),
-                    "n_channels": nchan,
-                    "pipeline": name,
-                }
-
-                print(res)
-                yield res
-
+                    print(res)
+                    yield res
 
 
 def active_wandb(args, config, subject, train=True):

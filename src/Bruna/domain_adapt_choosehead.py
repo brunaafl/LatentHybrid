@@ -2,8 +2,10 @@
 Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 """
+import warnings
 
 import torch
+import moabb
 from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
@@ -15,7 +17,7 @@ from moabb.utils import set_download_dir
 from util import parse_args, set_determinism, set_run_dir
 
 from hybrid_model import HybridModel
-from hybrid_evaluation import HybridEvaluation, HybridChooseHead
+from hybrid_evaluation import HybridChooseHead
 from hybrid_transform import HybridAggregateTransform
 from hybrid_classifier import define_hybrid_clf
 
@@ -31,6 +33,8 @@ from time import time
 For the joint model
 """
 
+moabb.set_log_level("info")
+warnings.filterwarnings("ignore")
 
 def main(args):
     """
@@ -53,33 +57,38 @@ def main(args):
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
     # Define paradigm and datasets
-    events = ["right_hand", "left_hand"]
-    if args.dataset == 'Schirrmeister2017':
-        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
-              "CP1", "CPz", "CP6", "CP4", "CP2"]
-    else:
-        ch = None
-    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
+
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
+        ch=None
+        subjects = dataset.subject_list
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
     elif args.dataset == 'Lee2019_MI':
         dataset = Lee2019_MI()
     elif args.dataset == 'Schirrmeister2017':
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
         dataset = Schirrmeister2017()
+        subjects = dataset.subject_list
+        subjects.pop(0)
+        dataset.subject_list = subjects
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
         paradigm = LeftRightImagery(resample=100.0)
+
+    events = ["right_hand", "left_hand"]
+
+    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
-    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
+    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[2])
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
     rpc = len(meta['session'].unique()) * len(meta['run'].unique())
@@ -97,19 +106,22 @@ def main(args):
     torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
 
     # Create Classifier
-    clf = define_hybrid_clf(model, config, experiment_name)
+    print(args)
+    criterion_type = args.criterion_type  # Define the loss function to use
+    clf = define_hybrid_clf(model, config, experiment_name, criterion_type)
 
     print(f"(3) Created clf {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
+    print(f"Type of loss function: {criterion_type}")
 
     runs = meta.run.values
     sessions = meta.session.values
     one_session = sessions == np.unique(sessions)[0]
     one_run = runs == np.unique(runs)[0]
     run_session = np.logical_and(one_session, one_run)
-    len_run = sum(run_session * 1)
+    len_run = sum(run_session * 1) if dataset.code == '001-2014' else 24
 
-    hybrid_adapter = HybridAggregateTransform()
-    hybrid_adapter_EA = HybridAggregateTransform(EA_len_run=len_run)
+    hybrid_adapter = HybridAggregateTransform(data_code=dataset.code)
+    hybrid_adapter_EA = HybridAggregateTransform(EA_len_run=len_run, data_code=dataset.code)
 
     pipes = {}
 
@@ -130,7 +142,7 @@ def main(args):
     eval_config.train.experiment_name = config.train.experiment_name
 
     # Define evaluation and train
-    overwrite = False  # set to True if we want to overwrite cached results
+    overwrite = True  # set to True if we want to overwrite cached results
     evaluation = HybridChooseHead(
         paradigm=paradigm,
         datasets=datasets,
@@ -144,7 +156,9 @@ def main(args):
         len_run=len_run,
         wandb_params=(args, config),
         run_dir=run_dir,
-        mode=args.mode
+        mode=args.mode,
+        remove_bn = args.remove_bn,
+        criterion_type = args.criterion_type
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
