@@ -242,8 +242,7 @@ class HybridEvaluation(BaseEvaluation):
             #break
 
 class HybridChooseHead(BaseEvaluation):
-    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit',
-                 wandb_params=None,criterion_type=None, remove_bn=False,
+    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,remove_bn='False', criterion_type=None,
                  **kwargs):
         add_cols = ["head"]
         super(HybridChooseHead, self).__init__(additional_columns=add_cols, *args, **kwargs)
@@ -337,12 +336,7 @@ class HybridChooseHead(BaseEvaluation):
                 else:
                     ea = 'noea'
 
-                torch.save(model.state_dict(), f"best_model_{subject_num}-shared.pth")
-
-                artifact = wandb.Artifact(f"best_model_{subject_num}-shared", type="model")
-                artifact.add_file(f"best_model_{subject_num}-shared.pth")
-                wandb.log_artifact(artifact)
-
+                # DOnt need to save model since it is the same as normal Hybrid Eval
                 wandb.finish()
 
                 duration = time() - t_start
@@ -393,11 +387,10 @@ class HybridChooseHead(BaseEvaluation):
                     y_pred = pred.flatten(0, 1).argmax(dim=1)
                     # Compute accuracy
                     score = accuracy_score(y[test[ix]], y_pred)
-
                     res = {
                         "time": duration,
                         "dataset": dataset,
-                        "head": best_subject,
+                        "head": subj,
                         "subject": subject,
                         "session": 'session_E',
                         "score": score,

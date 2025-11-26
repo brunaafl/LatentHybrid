@@ -109,7 +109,6 @@ def main(args):
     print(args)
     criterion_type = args.criterion_type  # Define the loss function to use
     clf = define_hybrid_clf(model, config, experiment_name, criterion_type)
-
     print(f"(3) Created clf {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
     print(f"Type of loss function: {criterion_type}")
 

@@ -285,6 +285,7 @@ class HybridModel(nn.Module):
             temp_norm = self.norm(temp_unique)
             temp_shared = self.shared_modules(temp_norm)
             out.append(temp_shared)
+            feat.append(temp_unique)
 
         result = torch.stack(out)
         feat = torch.stack(feat)
