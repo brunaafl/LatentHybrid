@@ -31,12 +31,12 @@ services:
               device_ids: [ '1' ]
               capabilities: [ gpu ]
   shared-EA-freeze-bn-:
-    profiles: ["Shared", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Shared-nll", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-freeze-bn
-    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
+    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference --criterion_type NLLLoss"
     deploy:
       resources:
         reservations:
@@ -45,12 +45,12 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
   shared-NoEA-freeze-bn:
-    profiles: [ "Shared", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [ "Shared-nll", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-freeze-bn
-    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
+    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference --criterion_type NLLLoss"
     deploy:
       resources:
         reservations:
@@ -58,7 +58,6 @@ services:
             - driver: nvidia
               device_ids: [ '1' ]
               capabilities: [ gpu ]
-
 ## Hybrid
   hybrid-EA-freeze-bn:
     profiles: ["Hybrid-Center-bn", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]

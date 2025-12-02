@@ -164,7 +164,7 @@ def main(args):
     evaluation = HybridEvaluation(
         paradigm=paradigm,
         datasets=datasets,
-        suffix=f"experiment_1_{args.dataset}",
+        suffix=f"experiment_shared_{args.dataset}",
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,

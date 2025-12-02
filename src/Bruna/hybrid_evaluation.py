@@ -31,7 +31,6 @@ from mne.epochs import BaseEpochs
 
 from hybrid_transform import HybridAggregateTransform
 from hybrid_classifier import define_hybrid_clf
-
 import wandb
 
 moabb.set_log_level("info")
@@ -169,12 +168,6 @@ class HybridEvaluation(BaseEvaluation):
                     ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
                                              test < (test[0] + copy_model["Hybrid_adapter"].n_trials_used))
 
-                    eval_run = active_wandb_eval(self.wandb_params[0], self.eval_config, subject_num, subj, train=False)
-
-                    for callback in eval_classifier.callbacks:
-                        if isinstance(callback, WandbLogger):
-                            callback.wandb_run = wandb.run
-
                     # Inference part
 
                     # If not fine-tuning
@@ -200,6 +193,13 @@ class HybridEvaluation(BaseEvaluation):
 
                     # If fine-tuning
                     else:
+                        eval_run = active_wandb_eval(self.wandb_params[0], self.eval_config, subject_num, subj,
+                                                     train=False)
+
+                        for callback in eval_classifier.callbacks:
+                            if isinstance(callback, WandbLogger):
+                                callback.wandb_run = wandb.run
+
                         t_start = time()
                         eval_clf = eval_pipe.fit(X[test[ix]], None,
                                                            Braindecode_dataset__labels=y[test[ix]],
