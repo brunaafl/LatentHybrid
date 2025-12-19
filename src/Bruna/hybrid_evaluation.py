@@ -3,6 +3,7 @@ from pathlib import Path
 
 import moabb
 import torch
+from pyriemann.utils.covariance import covariances
 
 from skorch.callbacks import WandbLogger
 from skorch.utils import to_numpy
@@ -151,7 +152,7 @@ class HybridEvaluation(BaseEvaluation):
 
                 duration = time() - t_start
                 # Test set
-                ix = test < (self.len_run * 2 + test[0])
+                ix = test < (self.len_run + test[0])
 
                 # Evaluation
                 # Iterate over all source heads
@@ -170,7 +171,7 @@ class HybridEvaluation(BaseEvaluation):
                     eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
                     # Evaluation set
-                    ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
+                    ix_eval = np.logical_and(test >= (self.len_run + test[0]),
                                              test < (test[0] + copy_model["Hybrid_adapter"].n_trials_used))
 
                     # Inference part
@@ -398,10 +399,18 @@ class HybridChooseHead(BaseEvaluation):
 
                     # Fix dimension and predict
                     eval_pipe['Net'].module.eval()
-                    pred, _ = eval_pipe['Net'].forward(X_trn)
+                    pred, feat = eval_pipe['Net'].forward(X_trn)
+                    print(feat.shape)
+                    feat = feat.flatten(0, 1).squeeze(2).to('cpu')
+                    print(feat.shape)
+
                     y_pred = pred.flatten(0, 1).argmax(dim=1)
                     # Compute accuracy
                     score = accuracy_score(y[test[ix]], y_pred)
+
+                    cov = covariances(feat, estimator='lwf')
+                    cls_distinc = class_distinctiveness(cov, y[test[ix]])
+
                     res = {
                         "time": duration,
                         "dataset": dataset,
@@ -409,6 +418,7 @@ class HybridChooseHead(BaseEvaluation):
                         "subject": subject,
                         "session": 'session_E',
                         "score": score,
+                        "class_distinctivness":cls_distinc,
                         "n_samples": len(train),
                         "n_channels": nchan,
                         "pipeline": name,

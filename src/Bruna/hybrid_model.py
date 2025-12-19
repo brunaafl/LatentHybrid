@@ -209,7 +209,6 @@ class LatentEuclideanAlignment(nn.Module):
         return eigvecs @ D_inv_sqrt @ eigvecs.T
 
     def forward(self, model_input):
-        print(model_input.dim())
         if model_input.dim() != 3:
             model_input = model_input.squeeze()
         r = 0
@@ -329,7 +328,6 @@ class SpecializedModel(nn.Module):
         inputs = self.split_input(x)
         out, feat = [], []
         for i, model_input in enumerate(inputs):
-            print(model_input.shape)
             temp_unique = self.unique_modules(model_input)
             feat.append(temp_unique)
             temp_shared = self.shared_modules(temp_unique)
