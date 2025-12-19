@@ -1,50 +1,65 @@
-import pandas as pd
+import numpy as np
+from pyriemann.utils.distance import distance
+from pyriemann.utils.mean import mean_covariance
 
-import moabb.analysis.plotting as moabb_plt
-from moabb.analysis.meta_analysis import (  # noqa: E501
-    compute_dataset_statistics,
-    find_significant_differences,
-)
-import matplotlib.pyplot as plt
+def check_metric(metric, expected_keys=["mean", "distance"]):
+    if isinstance(metric, str):
+        return [metric] * len(expected_keys)
 
-from util import set_run_dir
-from omegaconf import OmegaConf
+    elif isinstance(metric, dict):
+        if not all(k in metric.keys() for k in expected_keys):
+            raise KeyError(
+                f"metric must contain {expected_keys}, but got {metric.keys()}"
+            )
+
+        return [metric[k] for k in expected_keys]
+
+    else:
+        raise TypeError(f"metric must be str or dict, but got {type(metric)}")
 
 
-def statistical_analysis(args, results1_csv, results2_csv):
-    """
-    Execute statistical analysis and plot graphs
+def class_distinctiveness(X, y, exponent=1, metric="riemann",
+                          return_num_denom=False):
+    """ FROM PYRIEMANN """
 
-    :param results2_csv:
-    :param results1_csv:
-    :param args:
-    :return:
-    """
+    metric_mean, metric_dist = check_metric(metric)
+    classes = np.unique(y)
+    if len(classes) <= 1:
+        raise ValueError("y must contain at least two classes")
 
-    results1 = pd.read_csv(results1_csv)
-    results2 = pd.read_csv(results2_csv)
+    means = np.array([
+        mean_covariance(X[y == c], metric=metric_mean) for c in classes
+    ])
 
-    # Set run dir
-    config = OmegaConf.load(args.config_file)
-    run_dir, experiment_name = set_run_dir(config, args)
+    if len(classes) == 2:
+        num = distance(means[0], means[1], metric=metric_dist) ** exponent
+        denom = 0.5 * _get_within(X, y, means, classes, exponent, metric_dist)
 
-    # Concat results from different pipelines
-    results = pd.concat([results1, results2])
+    else:
+        mean_all = mean_covariance(means, metric=metric_mean)
+        dists_between = [
+            distance(m, mean_all, metric=metric_dist) ** exponent
+            for m in means
+        ]
+        num = np.sum(dists_between)
+        denom = _get_within(X, y, means, classes, exponent, metric_dist)
 
-    fig, color_dict = moabb_plt.score_plot(results)
-    fig.savefig(f"{run_dir}/score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
+    class_dis = num / denom
 
-    fig = moabb_plt.paired_plot(results, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/paired_score_plot_models.pdf", format='pdf', dpi=300, bbox_inches='tight')
+    if return_num_denom:
+        return class_dis, num, denom
+    else:
+        return class_dis
 
-    stats = compute_dataset_statistics(results)
-    P, T = find_significant_differences(stats)
 
-    fig = moabb_plt.meta_analysis_plot(stats, "EEGNetv4_EA", "EEGNetv4_Without_EA")
-    fig.savefig(f"{run_dir}/meta_analysis_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-
-    fig = moabb_plt.summary_plot(P, T)
-    fig.savefig(f"{run_dir}/meta_analysis_summary_plot.pdf", format='pdf', dpi=300, bbox_inches='tight')
-    plt.show()
+def _get_within(X, y, means, classes, exponent, metric):
+    """Private function to compute within dispersion."""
+    sigmas = []
+    for ic, c in enumerate(classes):
+        dists_within = [
+            distance(x, means[ic], metric=metric) ** exponent
+            for x in X[y == c]
+        ]
+        sigmas.append(np.mean(dists_within))
+    sum_sigmas = np.sum(sigmas)
+    return sum_sigmas

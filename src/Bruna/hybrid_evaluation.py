@@ -28,17 +28,20 @@ from time import time
 from copy import deepcopy
 
 from mne.epochs import BaseEpochs
-
+from analysis import class_distinctiveness
 from hybrid_transform import HybridAggregateTransform
 from hybrid_classifier import define_hybrid_clf
 import wandb
+
+from alignment import euclidean_alignment
 
 moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
 
 class HybridEvaluation(BaseEvaluation):
-    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,remove_bn='False', seed=0, criterion_type=None,
-                 **kwargs):
+    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None,
+                 mode='Fit', wandb_params=None,remove_bn='False', seed=0, criterion_type=None,
+                 online=False, **kwargs):
         add_cols = ["head"]
         super(HybridEvaluation, self).__init__(additional_columns=add_cols, *args, **kwargs)
         self.eval_config = eval_config
@@ -50,6 +53,7 @@ class HybridEvaluation(BaseEvaluation):
         self.remove_bn = remove_bn
         self.criterion_type = criterion_type
         self.seed = seed
+        self.online = online
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
@@ -118,10 +122,10 @@ class HybridEvaluation(BaseEvaluation):
                         callback.wandb_run = wandb.run
 
                 # Fit
-                #pdb.set_trace()
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 
+                # For saving the model
                 if self.remove_bn=='True':
                     bn = 'nobn'
                 else:
@@ -149,6 +153,7 @@ class HybridEvaluation(BaseEvaluation):
                 # Test set
                 ix = test < (self.len_run * 2 + test[0])
 
+                # Evaluation
                 # Iterate over all source heads
                 for subj in range(model['Net'].module.num_models):
 
@@ -169,7 +174,6 @@ class HybridEvaluation(BaseEvaluation):
                                              test < (test[0] + copy_model["Hybrid_adapter"].n_trials_used))
 
                     # Inference part
-
                     # If not fine-tuning
                     if self.mode == 'Inference':
                         eval_pipe['Net'].initialize()
@@ -181,7 +185,22 @@ class HybridEvaluation(BaseEvaluation):
                         eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
-                        X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
+
+                        # For online exp
+                        if self.online:
+                            # if EA
+                            if eval_pipe["Braindecode_dataset"].EA_len_run is not None:
+                                # Remove online EA from transformation
+                                eval_pipe["Braindecode_dataset"].EA_len_run = None
+
+                                _, r = euclidean_alignment(X[test[ix]][:self.len_run])
+                                X_eval = np.matmul(r, X[test[ix_eval]])
+                            else:
+                                X_eval = X[test[ix_eval]]
+                        else:
+                            X_eval = X[test[ix_eval]]
+
+                        X_trn = eval_pipe['Braindecode_dataset'].transform(X_eval)
 
                         # Fix dimension and predict
                         eval_pipe['Net'].module.eval()
@@ -215,7 +234,20 @@ class HybridEvaluation(BaseEvaluation):
                         eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
-                        X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
+
+                        # For online exp
+                        if self.online:
+                            # if EA
+                            if eval_clf["Braindecode_dataset"].EA_len_run is not None:
+                                # Remove online EA from transformation
+                                eval_clf["Braindecode_dataset"].EA_len_run = None
+
+                                _, r = euclidean_alignment(X[test[ix]][:self.len_run])
+                                X_eval = np.matmul(r, X[test[ix_eval]])
+                            else: X_eval = X[test[ix_eval]]
+                        else: X_eval = X[test[ix_eval]]
+
+                        X_trn = eval_clf['Braindecode_dataset'].transform(X_eval)
 
                         # Predict
                         pred, _ = eval_pipe['Net'].forward(X_trn)
@@ -326,32 +358,15 @@ class HybridChooseHead(BaseEvaluation):
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 
-                if self.remove_bn=='True':
-                    bn = 'nobn'
-                else:
-                    bn='bn'
-
-                if self.EA_in_eval:
-                    ea = 'ea'
-                else:
-                    ea = 'noea'
-
                 # DOnt need to save model since it is the same as normal Hybrid Eval
                 wandb.finish()
 
                 duration = time() - t_start
 
                 # Test set
-                ix = test < (self.len_run * 2 + test[0])
-
-                # Evaluation set
-                ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
-                                         test < (test[0] + model["Hybrid_adapter"].n_trials_used))
+                ix = test < (self.len_run + test[0])
 
                 copy_model = deepcopy(model)
-
-                best_subject = 0
-                best_score = 0
 
                 # Choose best head based on the inference
                 for subj in range(copy_model['Net'].module.num_models):

@@ -6,7 +6,7 @@ import warnings
 
 import torch
 import moabb
-from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014001, Cho2017, Shin2017A, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -67,8 +67,10 @@ def main(args):
         subjects = dataset.subject_list
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
-    elif args.dataset == 'Lee2019_MI':
-        dataset = Lee2019_MI()
+    elif args.dataset == 'Shin2017A':
+        dataset = Shin2017A(accept=True)
+        ch = None
+
     elif args.dataset == 'Schirrmeister2017':
         ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
               "CP1", "CPz", "CP6", "CP4", "CP2"]
@@ -118,7 +120,7 @@ def main(args):
     one_session = sessions == np.unique(sessions)[0]
     one_run = runs == np.unique(runs)[0]
     run_session = np.logical_and(one_session, one_run)
-    len_run = sum(run_session * 1) if dataset.code == '001-2014' else 24
+    len_run = sum(run_session * 1) if dataset.code == '001-2014' else config.train.len_run
 
     hybrid_adapter = HybridAggregateTransform(data_code=dataset.code)
     hybrid_adapter_EA = HybridAggregateTransform(EA_len_run=len_run, data_code=dataset.code)

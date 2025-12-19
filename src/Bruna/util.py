@@ -119,7 +119,7 @@ def parse_args():
         type=str,
         help="select the dataset to be used on the analyse.",
         default="BNCI2014001",
-        choices=["BNCI2014001", "PhysionetMI", "Cho2017", "Lee2019_MI", "Schirrmeister2017"],
+        choices=["BNCI2014001", "PhysionetMI", "Cho2017", "Shin2017A", "Schirrmeister2017"],
     )
 
     parser.add_argument(

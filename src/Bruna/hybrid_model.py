@@ -292,8 +292,7 @@ class HybridModel(nn.Module):
 
         if result.requires_grad:
             result.retain_grad()
-            ## TODO:remove later
-            #feat.retain_grad()
+            feat.retain_grad()
 
         # Return features also
         return result, feat
@@ -340,8 +339,7 @@ class SpecializedModel(nn.Module):
         feat = torch.stack(feat)
         if result.requires_grad:
             result.retain_grad()
-            # TODO: remove later
-            #feat.retain_grad()
+            feat.retain_grad()
 
         return result, feat
 
