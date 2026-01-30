@@ -277,9 +277,11 @@ class HybridModel(nn.Module):
         return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
 
     def forward(self, x):
+        #print(x.shape)
         inputs = self.split_input(x)
         out, feat = [], []
         for i, model_input in enumerate(inputs):
+
             temp_unique = self.unique_modules[i](model_input)
             temp_norm = self.norm(temp_unique)
             temp_shared = self.shared_modules(temp_norm)

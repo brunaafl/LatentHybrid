@@ -6,7 +6,7 @@ import warnings
 
 import torch
 import moabb
-from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI, Weibo2014
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -62,11 +62,13 @@ def main(args):
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014001()
+        dataset = BNCI2014_001()
         ch=None
         subjects = dataset.subject_list
-    elif args.dataset == 'Cho2017':
-        dataset = Cho2017()
+    elif args.dataset == 'Weibo2014':
+        dataset = Weibo2014()
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
     elif args.dataset == 'Lee2019_MI':
         dataset = Lee2019_MI()
     elif args.dataset == 'Schirrmeister2017':
@@ -168,12 +170,9 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/CHOOSEHEAD-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/Choose-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
     
     print("---------------------------------------")
-
-    # return results
-
 
 # Press the green button in the gutter to run the script.
 if __name__ == "__main__":

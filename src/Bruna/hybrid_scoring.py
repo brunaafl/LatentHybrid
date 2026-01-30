@@ -19,6 +19,7 @@ class HybridScoring(EpochScoring):
             return
         _X, y = unpack_data(batch)
         y_pred, _ = list(y_pred)
+        #print(len(y_pred))
         self.y_trues_.append(y)
         for subject_i in range(net.module.num_models):
             self.y_preds_[subject_i].append(torch.select(y_pred, 0, subject_i))
@@ -31,6 +32,10 @@ class HybridScoring(EpochScoring):
             **kwargs):
         X_test, y_test, y_pred = self.get_test_data(dataset_train, dataset_valid)
         unwrapped_y_pred = []
+        #print(X_test)
+
+        #print(len(y_test))
+        #print(len(y_pred))
         for subject_i in range(net.module.num_models):
             unwrapped_y_pred.append(torch.vstack(y_pred[subject_i]))
 

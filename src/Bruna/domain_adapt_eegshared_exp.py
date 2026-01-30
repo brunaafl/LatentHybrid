@@ -2,13 +2,15 @@
 Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 """
+import warnings
 
+import moabb
 import torchinfo
 import torch
 
 import numpy as np
 
-from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI, Weibo2014
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -27,6 +29,9 @@ from util import parse_args, set_determinism, set_run_dir
 """
 For the joint model
 """
+
+moabb.set_log_level("info")
+warnings.filterwarnings("ignore")
 
 
 def main(args):
@@ -49,19 +54,21 @@ def main(args):
     # Define paradigm and datasets
     events = ["right_hand", "left_hand"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events))
-
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014001()
     elif args.dataset == 'Cho2017':
         dataset = Cho2017()
-    elif args.dataset == 'Lee2019_MI':
-        dataset = Lee2019_MI()
+    elif args.dataset == 'Weibo2014':
+        dataset = Weibo2014()
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
     elif args.dataset == 'Schirrmeister2017':
         dataset = Schirrmeister2017()
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
         paradigm = LeftRightImagery(resample=100.0)
+
+    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
@@ -76,7 +83,7 @@ def main(args):
     one_session = sessions == "session_T"
     one_run = runs == 'run_0'
     run_session = np.logical_and(one_session, one_run)
-    len_run = sum(run_session * 1)
+    len_run = config.train.len_run
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
 
@@ -123,7 +130,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/eegclassifier_{args.criterion_type}_{experiment_name}_results.csv")
+    results.to_csv(f"{run_dir}/baseline-{args.criterion_type}_{experiment_name}_results.csv")
 
     print("---------------------------------------")
 

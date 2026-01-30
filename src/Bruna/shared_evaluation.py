@@ -1,5 +1,8 @@
 from skorch.utils import to_tensor, to_numpy, to_device
+import warnings
+from pathlib import Path
 
+import moabb
 import numpy as np
 
 from sklearn.model_selection import (
@@ -25,6 +28,9 @@ from train import define_clf, define_clf_hybrid
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
 import wandb
+
+moabb.set_log_level("info")
+warnings.filterwarnings("ignore")
 
 
 class SharedEvaluation(BaseEvaluation):

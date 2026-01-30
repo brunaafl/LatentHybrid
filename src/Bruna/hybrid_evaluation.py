@@ -122,6 +122,9 @@ class HybridEvaluation(BaseEvaluation):
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
 
+                print(X[train].get_data().shape)
+                print(y[train].shape)
+                print(groups[train].shape)
                 # Fit
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
@@ -173,7 +176,7 @@ class HybridEvaluation(BaseEvaluation):
                     # Evaluation set
                     ix_eval = np.logical_and(test >= (self.len_run + test[0]),
                                              test < (test[0] + copy_model["Hybrid_adapter"].n_trials_used))
-
+                    print(sum(ix_eval))
                     # Inference part
                     # If not fine-tuning
                     if self.mode == 'Inference':
@@ -186,6 +189,7 @@ class HybridEvaluation(BaseEvaluation):
                         eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
+                        X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
 
                         # For online exp
                         if self.online:
@@ -200,8 +204,6 @@ class HybridEvaluation(BaseEvaluation):
                                 X_eval = X[test[ix_eval]]
                         else:
                             X_eval = X[test[ix_eval]]
-
-                        X_trn = eval_pipe['Braindecode_dataset'].transform(X_eval)
 
                         # Fix dimension and predict
                         eval_pipe['Net'].module.eval()
@@ -232,9 +234,16 @@ class HybridEvaluation(BaseEvaluation):
                         artifact.add_file(str(model_dir / f'best_model_{subject_num}-head-{subj}_ft.pth'))
                         wandb.log_artifact(artifact)
 
+                        #print(len(y[test[ix_eval]]))
+                        #print(len(groups[test[ix_eval]]))
+
+                        #print(X[test[ix_eval]].get_data().shape)
+
                         eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
+                        X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
+
 
                         # For online exp
                         if self.online:
@@ -248,11 +257,15 @@ class HybridEvaluation(BaseEvaluation):
                             else: X_eval = X[test[ix_eval]]
                         else: X_eval = X[test[ix_eval]]
 
-                        X_trn = eval_clf['Braindecode_dataset'].transform(X_eval)
-
                         # Predict
-                        pred, _ = eval_pipe['Net'].forward(X_trn)
+                        eval_clf['Net'].module.eval()
+                        pred, feat = eval_clf['Net'].forward(X_trn)
+                        #print(feat.shape)
+                        feat = feat.flatten(0, 1).squeeze(2).to('cpu')
+                        #print(feat.shape)
+
                         y_pred = pred.flatten(0, 1).argmax(dim=1)
+                        # Compute accuracy
                         score = accuracy_score(y[test[ix_eval]], y_pred)
 
                         wandb.run.summary['eval_score'] = score
@@ -277,7 +290,7 @@ class HybridEvaluation(BaseEvaluation):
 class HybridChooseHead(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None, mode='Fit', wandb_params=None,remove_bn='False', criterion_type=None,
                  **kwargs):
-        add_cols = ["head"]
+        add_cols = ["head", 'class_distinctivness']
         super(HybridChooseHead, self).__init__(additional_columns=add_cols, *args, **kwargs)
         self.eval_config = eval_config
         self.EA_in_eval = EA_in_eval
@@ -356,6 +369,7 @@ class HybridChooseHead(BaseEvaluation):
 
                 # Fit
                 #pdb.set_trace()
+
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 

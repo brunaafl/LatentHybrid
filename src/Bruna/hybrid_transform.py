@@ -102,16 +102,21 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
         else:
             X = X_aux * 1e6
         print(f"(1) EA {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
-
+        #print(X.shape)
         # Create dict mapping each individual to their labeled trials
         subjects = {i: [] for i in np.unique(self.groups)}
         for index, trial in enumerate(X):
             subjects[self.groups[index]].append((trial, self.labels[index]))
 
+        print("Subjects ", subjects.keys())
+        print("Number of trials ", len(subjects[list(subjects.keys())[0]]))
+
         print(f"(2) Split {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
 
         # Get number of trials per subject
         n_trials_per_subject = min(np.unique([len(subjects[i]) for i in subjects]))
+
+        print(f'N trials per subject: {n_trials_per_subject}')
         self.n_trials_used = n_trials_per_subject
 
         # Get channel names
@@ -136,6 +141,9 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
             new_trials.append(base_dataset)
         print(f"(4) Process {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
 
+        print('Number of trials ',len(new_trials))
+        print('Len labels ', len(self.labels))
+        print('Len groups ',len(self.groups))
         dataset = BaseConcatDataset(new_trials)
         windows_dataset = create_fixed_length_windows(
             dataset,

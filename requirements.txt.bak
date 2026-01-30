@@ -1,4 +1,4 @@
-git+https://github.com/NeuroTechX/moabb#egg=moabb
+moabb==0.5.0
 braindecode==0.7
 pandas~=1.5.3
 mlxtend
@@ -17,3 +17,8 @@ scipy~=1.10.1
 torchinfo~=1.7.2
 plotly
 wandb
+ipywidgets
+notebook>=6.5.5
+ipympl
+transformers[torch]
+pyriemann

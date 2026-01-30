@@ -4,10 +4,9 @@ Baseline script to analyse the EEG Dataset.
 """
 import warnings
 
-import braindecode
 import torch
 import moabb
-from moabb.datasets import BNCI2014_001, Weibo2014, Shin2017A, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014001, Cho2017, Shin2017A, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -18,7 +17,7 @@ from moabb.utils import set_download_dir
 from util import parse_args, set_determinism, set_run_dir
 
 from hybrid_model import HybridModel
-from hybrid_evaluation import HybridEvaluation
+from hybrid_evaluation import HybridEvaluation, HybridSessionEvaluation
 from hybrid_transform import HybridAggregateTransform
 from hybrid_classifier import define_hybrid_clf
 
@@ -59,18 +58,15 @@ def main(args):
     )  # check if GPU is available, if True chooses to use it
     # Define paradigm and datasets
 
-    print(braindecode.__version__)
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014_001()
+        dataset = BNCI2014001()
         ch=None
         subjects = dataset.subject_list
-    elif args.dataset == 'Weibo2014':
-        dataset = Weibo2014()
-        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
-              "CP1", "CPz", "CP6", "CP4", "CP2"]
+    elif args.dataset == 'Cho2017':
+        dataset = Cho2017()
     elif args.dataset == 'Shin2017A':
         dataset = Shin2017A(accept=True)
         ch = None
@@ -103,13 +99,13 @@ def main(args):
 
     num_subjects = len(dataset.subject_list)
 
-    model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config,
+    model = HybridModel(num_subjects, args.model, n_chans, n_classes, input_window_samples, config=config,
                         freeze=args.freeze, args=args)
     # Send model to GPU
 
     if cuda:
         model.cuda()
-    torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
+    torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * num_subjects, X[0].shape[1]))
 
     # Create Classifier
     print(args)
@@ -149,10 +145,10 @@ def main(args):
 
     # Define evaluation and train
     overwrite = True  # set to True if we want to overwrite cached results
-    evaluation = HybridEvaluation(
+    evaluation = HybridSessionEvaluation(
         paradigm=paradigm,
         datasets=datasets,
-        suffix=f"experiment_1_{args.dataset}",
+        suffix=f"experiment_session_{args.dataset}",
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,
@@ -164,7 +160,8 @@ def main(args):
         run_dir=run_dir,
         mode=args.mode,
         remove_bn=args.remove_bn,
-        criterion_type = args.criterion_type
+        criterion_type = args.criterion_type,
+        cross_session= True
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
@@ -182,13 +179,8 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    #print(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    #results.to_csv(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-
-    #print(f"{run_dir}/2-centers_lr1_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    #results.to_csv(f"{run_dir}/2-centers_lr1_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    print(f"{run_dir}/Heads-session_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/Heads-session_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
     print("---------------------------------------")
 
 # Press the green button in the gutter to run the script.
