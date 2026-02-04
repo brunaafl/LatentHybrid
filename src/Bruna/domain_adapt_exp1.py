@@ -182,8 +182,8 @@ def main(args):
     print(run_dir)
     print(experiment_name)
     #print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
-    #results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/Test-refactoring_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    #results.to_csv(f"{run_dir}/Test-refactoring_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
 
     print("---------------------------------------")
 

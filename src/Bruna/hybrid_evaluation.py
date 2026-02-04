@@ -39,6 +39,171 @@ from alignment import euclidean_alignment
 moabb.set_log_level("info")
 warnings.filterwarnings("ignore")
 
+##### Base class #####
+
+class _BaseHybridEvaluation(BaseEvaluation):
+    """
+    Base class containing shared logic for Hybrid evaluations.
+    Handles initialization, data loading, and the main cross-validation loops.
+    """
+
+    def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None,
+                 mode='Fit', wandb_params=None, remove_bn='False', seed=0, criterion_type=None,
+                 online="off", cross_session = False, **kwargs):
+        add_cols = ["head"]
+        super().__init__(additional_columns=add_cols, *args, **kwargs)
+        self.eval_config = eval_config
+        self.EA_in_eval = EA_in_eval
+        self.len_run = len_run
+        self.wandb_params = wandb_params
+        self.run_dir = Path(run_dir) if run_dir else None
+        self.mode = mode
+        self.remove_bn = remove_bn
+        self.criterion_type = criterion_type
+        self.seed = seed
+        self.online = online
+        self.cross_session = cross_session
+
+    def is_valid(self, dataset):
+        return len(dataset.subject_list) > 1
+
+    def _safe_copy_skorch_model(self, model):
+        """
+        Creates a deep copy of a Skorch estimator.
+        """
+        new_model = clone(model)
+
+        if model['Net'].initialized_:
+            if hasattr(model['Net'], 'module_params_'):
+                new_model['Net'].module_params_ = deepcopy(model['Net'].module_params_)
+
+            # Initialize the new model to create the underlying PyTorch module
+            new_model['Net'].initialize()
+
+            new_model['Net'].module.load_state_dict(model['Net'].module.state_dict())
+            new_model['Net'].module_.load_state_dict(model['Net'].module_.state_dict())
+
+        return new_model
+
+    def _get_model_dir_name(self):
+        """Helper to generate model directory string."""
+        bn = 'nobn' if self.remove_bn == 'True' else 'bn'
+        ea = 'ea' if self.EA_in_eval else 'noea'
+        experiment_name = self.wandb_params[1].train.experiment_name
+        return Path(f'/workspace/models/{experiment_name}_{bn}_{ea}')
+
+    def _create_eval_pipeline(self, model, subj_idx, dataset_code):
+        """Creates the evaluation pipeline for a specific head."""
+        # Isolate the specific head (branch)
+        copy_model = deepcopy(model)
+        eval_model = copy_model["Net"].module.generate_branch_model(subj_idx)
+        eval_model.num_models = 1
+
+        # Define classifier
+        eval_classifier = define_hybrid_clf(
+            deepcopy(eval_model),
+            self.eval_config,
+            experiment_name='Evaluation',
+            criterion_type=self.criterion_type
+        )
+
+        # Define Dataset Transform
+        if self.EA_in_eval:
+            create_dataset = HybridAggregateTransform(EA_len_run=self.len_run, data_code=dataset_code)
+        else:
+            create_dataset = HybridAggregateTransform(data_code=dataset_code)
+
+        return Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)]), eval_model
+
+    def evaluate(self, dataset, pipelines, param_grid, process_pipeline, postprocess_pipeline=None):
+        """
+        Main evaluation loop - initial pretrain that is common to both methods
+        Delegates specific processing to `_process_results`.
+        """
+        # --- 1. Data Loading ---
+        init_time = time()
+        X, y, metadata = self.paradigm.get_data(dataset, return_epochs=self.return_epochs)
+        print(f"(1) Data loaded: {(time() - init_time):.2f}s")
+
+        # Encode labels
+        le = LabelEncoder()
+        y = y if self.mne_labels else le.fit_transform(y)
+        print(f"(2) Encoded: {(time() - init_time):.2f}s")
+
+        # Metadata
+        groups = metadata.subject.values
+        subjects=None
+        if self.cross_session:
+            subjects = groups
+            groups = metadata.session.values
+
+        n = len(np.unique(groups))
+        nchan = X.info["nchan"] if isinstance(X, BaseEpochs) else X.shape[1]
+
+        cv = LeaveOneGroupOut()
+        subject_num = 0
+
+        print(f"(3) Setup done: {(time() - init_time):.2f}s")
+
+        # Cross-Subject Loop
+        for train, test in tqdm(cv.split(X, y, groups), total=n, desc=f"{dataset.code}-CrossSubject"):
+            subject = groups[test[0]]
+
+            # Check computation cache
+            run_pipes = self.results.not_yet_computed(
+                pipelines, dataset, subject, process_pipeline
+            )
+
+            for name, clf in run_pipes.items():
+                t_start = time()
+                subject_num += 1
+
+                copyclf = deepcopy(clf)
+                _ = active_wandb(*self.wandb_params, subject_num, train=True)
+
+                # Attach WandB logger
+                for callback in copyclf['Net'].callbacks:
+                    if isinstance(callback, WandbLogger):
+                        callback.wandb_run = wandb.run
+
+                # Fit the main model
+                copyclf['Net'].classes = [0,1]
+
+                model = copyclf.fit(
+                    X[train], None,
+                    Hybrid_adapter__labels=y[train],
+                    Hybrid_adapter__subject_groups=groups[train],
+                    Hybrid_adapter__info=X[train].info
+                )
+
+                # Delegate to subclass for saving/evaluation/inference
+                yield from self._process_results(
+                            model=model,
+                            dataset=dataset,
+                            X=X, y=y, groups=groups,
+                            train_indices=train,
+                            test_indices=test,
+                            subject_num=subject_num,
+                            subject_id=subject,
+                            subjects = subjects,
+                            pipeline_name=name,
+                            nchan=nchan,
+                            t_start=t_start
+                        )
+
+                # Clean up WandB run after processing pipeline
+                if wandb.run is not None:
+                    wandb.finish()
+
+    def _process_results(self, **kwargs):
+        """Abstract method to be implemented by subclasses."""
+        raise NotImplementedError
+
+
+
+########################
+
+
 class HybridEvaluation(BaseEvaluation):
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None,
                  mode='Fit', wandb_params=None,remove_bn='False', seed=0, criterion_type=None,
@@ -67,18 +232,17 @@ class HybridEvaluation(BaseEvaluation):
 
         # 2. If the original model was already trained/initialized, we must transfer the state
         if model['Net'].initialized_:
+            if hasattr(model['Net'], 'module_params_'):
+                new_model['Net'].module_params_ = deepcopy(model['Net'].module_params_)
+
             # Initialize the new model to create the underlying PyTorch module
             new_model['Net'].initialize()
 
-            # 3. Transfer the weights safely using state_dict
-            # This is the "correct" way PyTorch demands for parametrized modules
+            new_model['Net'].module.load_state_dict(model['Net'].module.state_dict())
             new_model['Net'].module_.load_state_dict(model['Net'].module_.state_dict())
 
-            # you might also want to copy the optimizer state:
-            # if hasattr(model, 'optimizer_'):
-            #     new_model['Net'].optimizer_.load_state_dict(model.optimizer_.state_dict())
-
         return new_model
+
 
     def evaluate(self, dataset, pipelines, param_grid, process_pipeline, postprocess_pipeline=None):
 
@@ -127,8 +291,6 @@ class HybridEvaluation(BaseEvaluation):
         subject_num = 0
         for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject", ):
             subject = groups[test[0]]
-            print(subject)
-            print(test)
             # now we can check if this subject has results
             run_pipes = self.results.not_yet_computed(
                 pipelines, dataset, subject, process_pipeline
@@ -146,6 +308,8 @@ class HybridEvaluation(BaseEvaluation):
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
                 copyclf['Net'].classes = [0,1]
+
+                print(X[train].get_data().shape)
 
                 # Fit
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
@@ -171,21 +335,27 @@ class HybridEvaluation(BaseEvaluation):
 
                 duration = time() - t_start
                 # Test set
-                ix = test < (self.len_run + test[0])
+                ix = test < (self.len_run * 2 + test[0])
+
+                print(sum(ix))
                 # Evaluation set
-                ix_eval = np.logical_and(test >= (self.len_run + test[0]),
+                ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
                                          test < (test[0] + model["Hybrid_adapter"].n_trials_used))
+                print('n trials: ', model["Hybrid_adapter"].n_trials_used)
+                print(sum(ix_eval))
 
                 # Evaluation
                 # Iterate over all source heads
                 for subj in range(model['Net'].module.num_models):
 
-                    #copy_model = deepcopy(model)
+                    #trained_pytorch_module = deepcopy(model["Net"].module_)
+                    #eval_model = trained_pytorch_module.generate_branch_model(subj)
                     copy_model = self.safe_copy_skorch_model(model)
+                    #self.verification(model, copy_model)
                     eval_model = copy_model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
 
-                    eval_classifier = define_hybrid_clf(eval_model, self.eval_config,
+                    eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
                                                         experiment_name='Evaluation', criterion_type=self.criterion_type,)
                     if self.EA_in_eval:
                         create_dataset = HybridAggregateTransform(EA_len_run=self.len_run, data_code=dataset.code)
@@ -240,6 +410,7 @@ class HybridEvaluation(BaseEvaluation):
                             if isinstance(callback, WandbLogger):
                                 callback.wandb_run = wandb.run
 
+                        print(X[test[ix]].get_data().shape)
                         t_start = time()
                         eval_clf = eval_pipe.fit(X[test[ix]], None,
                                                            Braindecode_dataset__labels=y[test[ix]],
@@ -258,6 +429,7 @@ class HybridEvaluation(BaseEvaluation):
                         eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
+
                         X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
 
                         # For online exp
@@ -274,10 +446,14 @@ class HybridEvaluation(BaseEvaluation):
 
                         # Predict
                         eval_clf['Net'].module.eval()
-                        pred, feat = eval_clf['Net'].forward(X_eval)
-                        feat = feat.flatten(0, 1).squeeze(2).to('cpu')
+                        print(X[test[ix_eval]].get_data().shape)
+                        #pred, feat = eval_clf['Net'].forward(X_trn)
+                        #feat = feat.flatten(0, 1).squeeze(2).to('cpu')
+                        #y_pred = pred.flatten(0, 1).argmax(dim=1)
 
-                        y_pred = pred.flatten(0, 1).argmax(dim=1)
+                        eval_pipe['Net'].module.eval()
+                        y_pred, feat = eval_pipe['Net'].specialized_predict(X_trn)
+
                         # Compute accuracy
                         score = accuracy_score(y[test[ix_eval]], y_pred)
 

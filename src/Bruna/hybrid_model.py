@@ -313,6 +313,7 @@ class SpecializedModel(nn.Module):
             out.append(temp_shared)
 
         result = torch.stack(out)
+
         feat = torch.stack(feat)
         if result.requires_grad:
             result.retain_grad()
@@ -320,6 +321,31 @@ class SpecializedModel(nn.Module):
 
         return result, feat
 
-    def predict(self, X):
-        result, _ = self.forward(X)
-        return self.result.argmax()
+    def forward_and_predict(self, x):
+
+        inputs = self.split_input(x)
+        out, feat = [], []
+        for i, model_input in enumerate(inputs):
+            temp_unique = self.unique_modules(model_input)
+            feat.append(temp_unique)
+            temp_shared = self.shared_modules(temp_unique)
+            out.append(temp_shared)
+
+        result = torch.stack(out)
+
+        feat = torch.stack(feat)
+        if result.requires_grad:
+            result.retain_grad()
+            feat.retain_grad()
+
+        return result.transpose(0, 1), feat.transpose(0, 1)
+
+    def specialized_predict(self, X):
+        pred, feat = self.forward_and_predict(X)
+        print(pred.shape)
+        print(feat.shape)
+
+        y_pred = pred.reshape(-1, pred.size(-1)).argmax(dim=1)
+        feat_flat = feat.reshape(-1, feat.size(-1)).to('cpu')
+
+        return y_pred, feat_flat
