@@ -1,12 +1,9 @@
-"""
-Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
-Baseline script to analyse the EEG Dataset.
-"""
 import warnings
 
 import braindecode
 import torch
 import moabb
+from joblib import parallel_backend
 from moabb.datasets import BNCI2014_001, Weibo2014, Shin2017A, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
@@ -31,7 +28,7 @@ import numpy as np
 from time import time
 
 """
-For the joint model
+For the hybrid/combined model
 """
 
 moabb.set_log_level("info")
@@ -156,7 +153,7 @@ def main(args):
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,
-        n_jobs=-1,
+        n_jobs=1,
         eval_config=eval_config,
         EA_in_eval=(args.ea == 'alignment'),
         len_run=len_run,
@@ -164,7 +161,7 @@ def main(args):
         run_dir=run_dir,
         mode=args.mode,
         remove_bn=args.remove_bn,
-        criterion_type = args.criterion_type
+        criterion_type = args.criterion_type,
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
@@ -176,19 +173,18 @@ def main(args):
 
     print(f"(6) Remove batch normalization? {args.remove_bn} - {bn}")
 
+    #with parallel_backend("sequential"):
+    #    results = evaluation.process(pipes)
     results = evaluation.process(pipes)
     print(results.head())
 
     # Save results
     print(run_dir)
     print(experiment_name)
-    #print(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    #results.to_csv(f"{run_dir}/latent_alignment_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
+    #print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    #results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/Test-refactoring_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
 
-    #print(f"{run_dir}/2-centers_lr1_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    #results.to_csv(f"{run_dir}/2-centers_lr1_{bn}_{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_{args.mode}_results.csv")
-    print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
     print("---------------------------------------")
 
 # Press the green button in the gutter to run the script.

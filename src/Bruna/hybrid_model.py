@@ -105,9 +105,9 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
         drop_prob = config.model.drop_prob
 
     temp_model = EEGNetv4(
-        n_chans,
-        n_classes,
-        input_window_samples=input_window_samples,
+        n_chans=n_chans,
+        n_outputs=n_classes,
+        n_times=input_window_samples,
         final_conv_length=config.model.final_conv_length,
         drop_prob=drop_prob
     )
@@ -215,27 +215,6 @@ class LatentEuclideanAlignment(nn.Module):
         for i in range(len(model_input)):
             trial = model_input[i]
             cov = torch.cov(trial)
-
-            """
-            # Sample covariance: scale by (n_times - 1)
-            n_times = input_centered.shape[2]
-            covariances = covariances / (n_times - 1)
-        
-            # Normalize each covariance matrix by its trace.
-            trace = covariances.diagonal(dim1=1, dim2=2).sum(dim=1, keepdim=True).unsqueeze(2)
-        
-            covariances = covariances / (
-                trace / covariances.shape[-1]
-            )  # divide by the average trace
-        
-            # Add a small identity matrix for numerical stability.
-            identity = torch.eye(covariances.shape[1], device=inp
-            
-            # Add a small identity matrix for numerical stability.
-            identity = torch.eye(covariances.shape[1], device=input.device).unsqueeze(0)
-            covariances = covariances + epsilon * identity
-            """
-
             r += cov
         r /= len(model_input)
         r_op = self.inv_sqrtm(r)
@@ -277,11 +256,9 @@ class HybridModel(nn.Module):
         return torch.split(X, int(X.shape[1] / self.num_models), dim=1)
 
     def forward(self, x):
-        #print(x.shape)
         inputs = self.split_input(x)
         out, feat = [], []
         for i, model_input in enumerate(inputs):
-
             temp_unique = self.unique_modules[i](model_input)
             temp_norm = self.norm(temp_unique)
             temp_shared = self.shared_modules(temp_norm)

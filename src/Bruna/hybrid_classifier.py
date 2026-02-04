@@ -9,12 +9,12 @@ from sklearn.metrics import accuracy_score
 from skorch.dataset import ValidSplit, unpack_data
 from skorch.callbacks import EarlyStopping, EpochScoring, LRScheduler, GradientNormClipping, Checkpoint, WandbLogger
 from skorch.utils import to_tensor
-from torch.nn import NLLLoss
+from torch.nn import NLLLoss, CrossEntropyLoss
 
 from hybrid_scoring import HybridScoring
 from alignment_loss import JointAlignmentLoss
 
-criterion_types = {'AlignmentLoss':JointAlignmentLoss, 'NLLLoss':NLLLoss}
+criterion_types = {'AlignmentLoss':JointAlignmentLoss, 'NLLLoss':NLLLoss, 'CrossEntropyLoss': CrossEntropyLoss}
 
 # Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):
@@ -59,6 +59,7 @@ class HybridClassifier(EEGClassifier):
 
 def get_subject_acc_scorer(subject):
     def scoring_for_subject_i(model, x, y_true):
+
         # Adapt here to deal with (out,feat) tuple
         out = list(model.forward_iter())
         y_preds = [z for z in out]
@@ -128,6 +129,7 @@ def define_hybrid_clf(model, config, experiment_name, criterion_type):
         optimizer=torch.optim.AdamW,
         optimizer__lr=lr,
         optimizer__weight_decay=weight_decay,
+        callbacks__valid_acc=None,
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         batch_size=batch_size,
         max_epochs=config.train.n_epochs,

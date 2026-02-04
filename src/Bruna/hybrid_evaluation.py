@@ -16,7 +16,7 @@ from sklearn.model_selection import (
 from sklearn.model_selection._validation import _score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import get_scorer, accuracy_score
-
+from sklearn.base import clone
 from sklearn.pipeline import Pipeline
 from torchinfo import torchinfo
 
@@ -59,7 +59,28 @@ class HybridEvaluation(BaseEvaluation):
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
 
-    def evaluate(self, dataset, pipelines, grid_search):
+    def safe_copy_skorch_model(self,model):
+        """
+        Creates a deep copy of a Skorch estimator.
+        """
+        new_model = clone(model)
+
+        # 2. If the original model was already trained/initialized, we must transfer the state
+        if model['Net'].initialized_:
+            # Initialize the new model to create the underlying PyTorch module
+            new_model['Net'].initialize()
+
+            # 3. Transfer the weights safely using state_dict
+            # This is the "correct" way PyTorch demands for parametrized modules
+            new_model['Net'].module_.load_state_dict(model['Net'].module_.state_dict())
+
+            # you might also want to copy the optimizer state:
+            # if hasattr(model, 'optimizer_'):
+            #     new_model['Net'].optimizer_.load_state_dict(model.optimizer_.state_dict())
+
+        return new_model
+
+    def evaluate(self, dataset, pipelines, param_grid, process_pipeline, postprocess_pipeline=None):
 
         """Evaluate results on a single dataset.
 
@@ -106,9 +127,12 @@ class HybridEvaluation(BaseEvaluation):
         subject_num = 0
         for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject", ):
             subject = groups[test[0]]
-
+            print(subject)
+            print(test)
             # now we can check if this subject has results
-            run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
+            run_pipes = self.results.not_yet_computed(
+                pipelines, dataset, subject, process_pipeline
+            )
 
             # iterate over pipelines
             for name, clf in run_pipes.items():
@@ -121,30 +145,22 @@ class HybridEvaluation(BaseEvaluation):
                 for callback in copyclf['Net'].callbacks:
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
+                copyclf['Net'].classes = [0,1]
 
-                print(X[train].get_data().shape)
-                print(y[train].shape)
-                print(groups[train].shape)
                 # Fit
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 
-                # For saving the model
-                if self.remove_bn=='True':
-                    bn = 'nobn'
-                else:
-                    bn='bn'
-
-                if self.EA_in_eval:
-                    ea = 'ea'
-                else:
-                    ea = 'noea'
+                # Save Model Logic
+                bn = 'nobn' if self.remove_bn == 'True' else 'bn'
+                ea = 'ea' if self.EA_in_eval else 'noea'
 
                 model_dir = Path(f'/workspace/models/{self.wandb_params[1].train.experiment_name}_{bn}_{ea}')
-                model_path = model_dir / f'best_model_{subject_num}-shared.pth'
                 model_dir.mkdir(parents=True, exist_ok=True)
+                model_path = model_dir / f'best_model_{subject_num}-shared.pth'
 
                 print(f"(1) Model saved at {model_dir}")
+                state_dict = model['Net'].module.state_dict()
                 torch.save(model['Net'].module.state_dict(), model_path)
 
                 artifact = wandb.Artifact(f'best_model_{subject_num}-shared.pth', type="model")
@@ -156,16 +172,20 @@ class HybridEvaluation(BaseEvaluation):
                 duration = time() - t_start
                 # Test set
                 ix = test < (self.len_run + test[0])
+                # Evaluation set
+                ix_eval = np.logical_and(test >= (self.len_run + test[0]),
+                                         test < (test[0] + model["Hybrid_adapter"].n_trials_used))
 
                 # Evaluation
                 # Iterate over all source heads
                 for subj in range(model['Net'].module.num_models):
 
-                    copy_model = deepcopy(model)
+                    #copy_model = deepcopy(model)
+                    copy_model = self.safe_copy_skorch_model(model)
                     eval_model = copy_model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
 
-                    eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
+                    eval_classifier = define_hybrid_clf(eval_model, self.eval_config,
                                                         experiment_name='Evaluation', criterion_type=self.criterion_type,)
                     if self.EA_in_eval:
                         create_dataset = HybridAggregateTransform(EA_len_run=self.len_run, data_code=dataset.code)
@@ -173,11 +193,8 @@ class HybridEvaluation(BaseEvaluation):
                         create_dataset = HybridAggregateTransform(data_code=dataset.code)
                     eval_pipe = Pipeline([("Braindecode_dataset", create_dataset), ("Net", eval_classifier)])
 
-                    # Evaluation set
-                    ix_eval = np.logical_and(test >= (self.len_run + test[0]),
-                                             test < (test[0] + copy_model["Hybrid_adapter"].n_trials_used))
-                    print(sum(ix_eval))
-                    # Inference part
+                    ### Inference part
+
                     # If not fine-tuning
                     if self.mode == 'Inference':
                         eval_pipe['Net'].initialize()
@@ -189,6 +206,7 @@ class HybridEvaluation(BaseEvaluation):
                         eval_pipe["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_pipe["Braindecode_dataset"].info = X[test[ix_eval]].info
+                        print(X[test[ix_eval]].get_data().shape)
                         X_trn = eval_pipe['Braindecode_dataset'].transform(X[test[ix_eval]])
 
                         # For online exp
@@ -207,7 +225,7 @@ class HybridEvaluation(BaseEvaluation):
 
                         # Fix dimension and predict
                         eval_pipe['Net'].module.eval()
-                        pred,_ = eval_pipe['Net'].forward(X_trn)
+                        pred,_ = eval_pipe['Net'].forward(X_eval)
                         y_pred = pred.flatten(0, 1).argmax(dim=1)
                         # Compute accuracy
                         score = accuracy_score(y[test[ix_eval]], y_pred)
@@ -229,21 +247,18 @@ class HybridEvaluation(BaseEvaluation):
                                                            Braindecode_dataset__info=X[test[ix]].info)
                         duration = duration + time() - t_start
 
-                        torch.save(eval_clf['Net'].module.state_dict(), model_dir / f'best_model_{subject_num}-head-{subj}_ft.pth')
+                        # Save Fine-tuned model
+                        ft_path = model_dir / f'best_model_{subject_num}-head-{subj}_ft.pth'
+                        torch.save(eval_clf['Net'].module.state_dict(), ft_path)
+
                         artifact = wandb.Artifact(f'best_model_{subject_num}-head-{subj}_ft.pth', type="model")
-                        artifact.add_file(str(model_dir / f'best_model_{subject_num}-head-{subj}_ft.pth'))
+                        artifact.add_file(str(ft_path))
                         wandb.log_artifact(artifact)
-
-                        #print(len(y[test[ix_eval]]))
-                        #print(len(groups[test[ix_eval]]))
-
-                        #print(X[test[ix_eval]].get_data().shape)
 
                         eval_clf["Braindecode_dataset"].labels = y[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].groups = groups[test[ix_eval]]
                         eval_clf["Braindecode_dataset"].info = X[test[ix_eval]].info
                         X_trn = eval_clf['Braindecode_dataset'].transform(X[test[ix_eval]])
-
 
                         # For online exp
                         if self.online:
@@ -259,10 +274,8 @@ class HybridEvaluation(BaseEvaluation):
 
                         # Predict
                         eval_clf['Net'].module.eval()
-                        pred, feat = eval_clf['Net'].forward(X_trn)
-                        #print(feat.shape)
+                        pred, feat = eval_clf['Net'].forward(X_eval)
                         feat = feat.flatten(0, 1).squeeze(2).to('cpu')
-                        #print(feat.shape)
 
                         y_pred = pred.flatten(0, 1).argmax(dim=1)
                         # Compute accuracy
@@ -304,7 +317,7 @@ class HybridChooseHead(BaseEvaluation):
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
 
-    def evaluate(self, dataset, pipelines, grid_search):
+    def evaluate(self, dataset, pipelines, param_grid, process_pipeline, postprocess_pipeline=None):
 
         """Evaluate results on a single dataset.
 
@@ -414,9 +427,7 @@ class HybridChooseHead(BaseEvaluation):
                     # Fix dimension and predict
                     eval_pipe['Net'].module.eval()
                     pred, feat = eval_pipe['Net'].forward(X_trn)
-                    print(feat.shape)
                     feat = feat.flatten(0, 1).squeeze(2).to('cpu')
-                    print(feat.shape)
 
                     y_pred = pred.flatten(0, 1).argmax(dim=1)
                     # Compute accuracy

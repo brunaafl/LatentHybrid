@@ -2,7 +2,6 @@ services:
   base-experiment:
     build: .
     image: hybrid_image:latest
-    user: "${MYUID}:${MYGID}"
     tty: true
     stdin_open: true
     volumes:

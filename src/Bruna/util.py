@@ -16,7 +16,6 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
-import mlflow
 import numpy as np
 import skorch
 import torch
@@ -191,7 +190,7 @@ def parse_args():
         type=str,
         help="Select a loss function",
         default="AlignmentLoss",
-        choices=["AlignmentLoss", "NLLLoss"],
+        choices=["AlignmentLoss", "NLLLoss", "CrossEntropyLoss"],
     )
 
     parser.add_argument(
@@ -259,45 +258,6 @@ def set_run_dir(config, args):
     )
     return run_dir, experiment_name
 
-
-def starting_mlflow(config, args, baseline=False, model_name="", task=""):
-    """
-    Util function to starting the active_run with mlflow.
-    Parameters
-    ----------
-    config
-    args
-    baseline
-
-    Returns
-    -------
-
-    """
-    if baseline:
-        experiment_name = (
-                config.train.experiment_name + "-" + model_name + "-" + task
-        )
-    else:
-        experiment_name = (
-                config.train.experiment_name
-                + "-"
-                + str(args.dataset)
-                + "-"
-                + str(args.ea)
-        )
-
-    mlflow.set_experiment(experiment_name)
-
-    experiment = mlflow.get_experiment_by_name(experiment_name)
-
-    active_run = mlflow.start_run(
-        run_name=config.train.mlflow_dir,
-        experiment_id=experiment.experiment_id,
-    )
-
-    return active_run
-
-
 class TensorBoardCallback(skorch.callbacks.TensorBoard):
     """Tensorboard as skorch callback.
 
@@ -320,35 +280,4 @@ class TensorBoardCallback(skorch.callbacks.TensorBoard):
         self.writer.add_hparams(
             neural_net_params, {"hparam/best_loss": best_loss}
         )
-
-
-def log_mlflow(active_run, model, run_report, config, args, split_ids):
-    """Log model and performance on Mlflow system."""
-
-    with active_run:
-        print(f"MLFLOW URI: {mlflow.tracking.get_tracking_uri()}")
-        print(f"MLFLOW ARTIFACT URI: {mlflow.get_artifact_uri()}")
-
-        for key, value in vars(args).items():
-            mlflow.log_param(key, value)
-
-        for key, value in vars(config).items():
-            mlflow.log_param(key, value)
-
-        for key, value in split_ids.items():
-            mlflow.log_param(key, value)
-
-        try:
-
-            for key, value in vars(split_ids).items():
-                mlflow.log_param(key, value)
-
-            mlflow.log_artifacts(str(run_report), artifact_path="events")
-            raw_model = model.module if hasattr(model, "module") else model
-            mlflow.pytorch.log_model(raw_model, "final_model")
-        except Exception as ex:
-            print(f"Error {ex}, ignore if train option.")
-
-            print("log the model fail in option 1, works in option 2.")
-
 

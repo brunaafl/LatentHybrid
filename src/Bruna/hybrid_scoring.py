@@ -1,4 +1,6 @@
+import numpy as np
 import torch
+from sklearn.metrics import accuracy_score
 
 from skorch.callbacks.scoring import _cache_net_forward_iter
 from skorch.callbacks import EpochScoring
@@ -11,16 +13,16 @@ class HybridScoring(EpochScoring):
         self.y_trues_ = []
         for subject_i in range(net.module.num_models):
             self.y_preds_.append([])
-        self.tag = False
 
     def on_batch_end(
             self, net, batch, y_pred, training, **kwargs):
         if not self.use_caching or training != self.on_train:
             return
         _X, y = unpack_data(batch)
+
         y_pred, _ = list(y_pred)
-        #print(len(y_pred))
         self.y_trues_.append(y)
+        # Collect predictions for each head
         for subject_i in range(net.module.num_models):
             self.y_preds_[subject_i].append(torch.select(y_pred, 0, subject_i))
 
@@ -30,12 +32,9 @@ class HybridScoring(EpochScoring):
             dataset_train,
             dataset_valid,
             **kwargs):
-        X_test, y_test, y_pred = self.get_test_data(dataset_train, dataset_valid)
+        X_test, y_test, y_pred = self.get_test_data(dataset_train, dataset_valid, self.use_caching)
         unwrapped_y_pred = []
-        #print(X_test)
 
-        #print(len(y_test))
-        #print(len(y_pred))
         for subject_i in range(net.module.num_models):
             unwrapped_y_pred.append(torch.vstack(y_pred[subject_i]))
 
