@@ -447,12 +447,12 @@ class HybridEvaluation(BaseEvaluation):
                         # Predict
                         eval_clf['Net'].module.eval()
                         print(X[test[ix_eval]].get_data().shape)
-                        #pred, feat = eval_clf['Net'].forward(X_trn)
-                        #feat = feat.flatten(0, 1).squeeze(2).to('cpu')
-                        #y_pred = pred.flatten(0, 1).argmax(dim=1)
+                        pred, feat = eval_clf['Net'].forward(X_trn)
+                        feat = feat.flatten(0, 1).squeeze(2).to('cpu')
+                        y_pred = pred.flatten(0, 1).argmax(dim=1)
 
-                        eval_pipe['Net'].module.eval()
-                        y_pred, feat = eval_pipe['Net'].specialized_predict(X_trn)
+                        #eval_pipe['Net'].module.eval()
+                        #y_pred, feat = eval_pipe['Net'].specialized_predict(X_trn)
 
                         # Compute accuracy
                         score = accuracy_score(y[test[ix_eval]], y_pred)

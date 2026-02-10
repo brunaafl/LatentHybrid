@@ -31,6 +31,8 @@ class HybridClassifier(EEGClassifier):
 
         # y_pred is a tuple with (out, feat)
         y_pred, feature = y_pred
+
+
         y_true = to_tensor(y_true, device=self.device)
         losses = []
         for subject in range(y_pred.shape[0]):
@@ -56,6 +58,10 @@ class HybridClassifier(EEGClassifier):
         loss = sum(losses) / self.module.num_models
 
         return loss
+
+    def specialized_predict(self, X):
+        # This calls the method on the underlying PyTorch module
+        return self.module.specialized_predict(X)
 
 def get_subject_acc_scorer(subject):
     def scoring_for_subject_i(model, x, y_true):

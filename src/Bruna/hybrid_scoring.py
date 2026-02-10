@@ -21,6 +21,9 @@ class HybridScoring(EpochScoring):
         _X, y = unpack_data(batch)
 
         y_pred, _ = list(y_pred)
+
+        #y_pred = y_pred.transpose(0, 1)
+
         self.y_trues_.append(y)
         # Collect predictions for each head
         for subject_i in range(net.module.num_models):

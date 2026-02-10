@@ -320,6 +320,7 @@ class SpecializedModel(nn.Module):
             feat.retain_grad()
 
         return result, feat
+        #return result.transpose(0, 1), feat.transpose(0, 1)
 
     def forward_and_predict(self, x):
 
