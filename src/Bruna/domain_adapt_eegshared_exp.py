@@ -3,14 +3,16 @@ Authors: Bruno Aristimunha <b.aristimunha@gmail.com>
 Baseline script to analyse the EEG Dataset.
 """
 import warnings
+from time import time
 
+import braindecode
 import moabb
 import torchinfo
 import torch
 
 import numpy as np
 
-from moabb.datasets import BNCI2014001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI, Weibo2014
+from moabb.datasets import BNCI2014_001, Shin2017A, Lee2019_MI, Schirrmeister2017, PhysionetMI, Weibo2014
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -35,12 +37,10 @@ warnings.filterwarnings("ignore")
 
 
 def main(args):
-    """
-    Parameters
-    ----------
-    args : object
-    """
     torch.set_num_threads(1)
+
+    init_time = time()
+
     config = OmegaConf.load(args.config_file)
     eval_config = OmegaConf.load(args.eval_config_file)
     # Setting run information
@@ -52,21 +52,35 @@ def main(args):
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
     # Define paradigm and datasets
-    events = ["right_hand", "left_hand"]
+
+    print(braindecode.__version__)
+
+    print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
     if args.dataset == 'BNCI2014001':
-        dataset = BNCI2014001()
-    elif args.dataset == 'Cho2017':
-        dataset = Cho2017()
+        dataset = BNCI2014_001()
+        ch=None
+        subjects = dataset.subject_list
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
         ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
               "CP1", "CPz", "CP6", "CP4", "CP2"]
+    elif args.dataset == 'Shin2017A':
+        dataset = Shin2017A(accept=True)
+        ch = None
+
     elif args.dataset == 'Schirrmeister2017':
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
         dataset = Schirrmeister2017()
+        subjects = dataset.subject_list
+        subjects.pop(0)
+        dataset.subject_list = subjects
     elif args.dataset == 'PhysionetMI':
         dataset = PhysionetMI()
         paradigm = LeftRightImagery(resample=100.0)
+
+    events = ["right_hand", "left_hand"]
 
     paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
 
@@ -90,8 +104,6 @@ def main(args):
     # Send model to GPU
     if cuda:
         model.cuda()
-
-    #torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (len(subjects)), X[0].shape[1]))
 
     # Create Classifier
     clf = define_clf(model, config, warm_start=True, experiment_name='EEGClassifier')

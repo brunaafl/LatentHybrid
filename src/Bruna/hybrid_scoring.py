@@ -22,7 +22,7 @@ class HybridScoring(EpochScoring):
 
         y_pred, _ = list(y_pred)
 
-        #y_pred = y_pred.transpose(0, 1)
+        y_pred = y_pred.transpose(0, 1)
 
         self.y_trues_.append(y)
         # Collect predictions for each head

@@ -32,6 +32,9 @@ class HybridClassifier(EEGClassifier):
         # y_pred is a tuple with (out, feat)
         y_pred, feature = y_pred
 
+        # Transposing back
+        y_pred = y_pred.transpose(0, 1)
+        feature = feature.transpose(0, 1)
 
         y_true = to_tensor(y_true, device=self.device)
         losses = []

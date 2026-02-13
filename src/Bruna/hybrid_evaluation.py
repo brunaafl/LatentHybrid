@@ -493,6 +493,25 @@ class HybridChooseHead(BaseEvaluation):
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
 
+    def safe_copy_skorch_model(self,model):
+        """
+        Creates a deep copy of a Skorch estimator.
+        """
+        new_model = clone(model)
+
+        # 2. If the original model was already trained/initialized, we must transfer the state
+        if model['Net'].initialized_:
+            if hasattr(model['Net'], 'module_params_'):
+                new_model['Net'].module_params_ = deepcopy(model['Net'].module_params_)
+
+            # Initialize the new model to create the underlying PyTorch module
+            new_model['Net'].initialize()
+
+            new_model['Net'].module.load_state_dict(model['Net'].module.state_dict())
+            new_model['Net'].module_.load_state_dict(model['Net'].module_.state_dict())
+
+        return new_model
+
     def evaluate(self, dataset, pipelines, param_grid, process_pipeline, postprocess_pipeline=None):
 
         """Evaluate results on a single dataset.
@@ -509,6 +528,7 @@ class HybridChooseHead(BaseEvaluation):
                    'n_channels': number of channel,
                    'pipeline': pipeline name}
         """
+
 
         init_time = time()
         X, y, metadata = self.paradigm.get_data(dataset, return_epochs=self.return_epochs)
@@ -540,9 +560,10 @@ class HybridChooseHead(BaseEvaluation):
         subject_num = 0
         for train, test in tqdm(cv.split(X, y, groups), total=n_subjects, desc=f"{dataset.code}-CrossSubject", ):
             subject = groups[test[0]]
-
             # now we can check if this subject has results
-            run_pipes = self.results.not_yet_computed(pipelines, dataset, subject)
+            run_pipes = self.results.not_yet_computed(
+                pipelines, dataset, subject, process_pipeline
+            )
 
             # iterate over pipelines
             for name, clf in run_pipes.items():
@@ -555,31 +576,44 @@ class HybridChooseHead(BaseEvaluation):
                 for callback in copyclf['Net'].callbacks:
                     if isinstance(callback, WandbLogger):
                         callback.wandb_run = wandb.run
+                copyclf['Net'].classes = [0,1]
+
+                print(X[train].get_data().shape)
 
                 # Fit
-                #pdb.set_trace()
-
                 model = copyclf.fit(X[train], None, Hybrid_adapter__labels=y[train],
                                     Hybrid_adapter__subject_groups=groups[train], Hybrid_adapter__info=X[train].info)
 
-                # DOnt need to save model since it is the same as normal Hybrid Eval
+                # Save Model Logic
+                bn = 'nobn' if self.remove_bn == 'True' else 'bn'
+                ea = 'ea' if self.EA_in_eval else 'noea'
+
+                model_dir = Path(f'/workspace/models/{self.wandb_params[1].train.experiment_name}_{bn}_{ea}')
+                model_dir.mkdir(parents=True, exist_ok=True)
+                model_path = model_dir / f'best_model_{subject_num}-shared.pth'
+
+                print(f"(1) Model saved at {model_dir}")
+                state_dict = model['Net'].module.state_dict()
+                torch.save(model['Net'].module.state_dict(), model_path)
+
+                artifact = wandb.Artifact(f'best_model_{subject_num}-shared.pth', type="model")
+                artifact.add_file(str(model_path))
+                wandb.log_artifact(artifact)
+
                 wandb.finish()
 
                 duration = time() - t_start
 
                 # Test set
-                ix = test < (self.len_run + test[0])
-
-                copy_model = deepcopy(model)
+                ix = test < (self.len_run * 2 + test[0])
 
                 # Choose best head based on the inference
-                for subj in range(copy_model['Net'].module.num_models):
+                for subj in range(model['Net'].module.num_models):
 
-                    copy_model = deepcopy(model)
+                    copy_model = self.safe_copy_skorch_model(model)
                     eval_model = copy_model["Net"].module.generate_branch_model(subj)
                     eval_model.num_models = 1
 
-                    copy_eva_model = deepcopy(eval_model)
                     eval_classifier = define_hybrid_clf(deepcopy(eval_model), self.eval_config,
                                                         experiment_name='Evaluation', criterion_type=self.criterion_type,)
                     if self.EA_in_eval:

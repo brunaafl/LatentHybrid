@@ -273,7 +273,7 @@ class HybridModel(nn.Module):
             feat.retain_grad()
 
         # Return features also
-        return result, feat
+        return result.transpose(0, 1), feat.transpose(0, 1)
 
     def generate_branch_model(self, subj=None):
         if subj is None:
@@ -319,8 +319,8 @@ class SpecializedModel(nn.Module):
             result.retain_grad()
             feat.retain_grad()
 
-        return result, feat
-        #return result.transpose(0, 1), feat.transpose(0, 1)
+        #return result, feat
+        return result.transpose(0, 1), feat.transpose(0, 1)
 
     def forward_and_predict(self, x):
 

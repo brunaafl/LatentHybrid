@@ -1,9 +1,9 @@
 services:
 
-#### BNCI EA ALL BN
+###### SHARED BASELINE ######
 
   shared-ea-bn-weibo:
-    profiles: [ "Shared-weibo", "test-weibo", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [ "Shared", "weibo" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -18,7 +18,7 @@ services:
               capabilities: [ gpu ]
 
   shared-noea-bn-weibo:
-    profiles: [ "Shared-weibo", "test-weibo", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [ "Shared", "weibo" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -32,13 +32,13 @@ services:
               device_ids: [ '1' ]
               capabilities: [ gpu ]
 
-  shared-EA-freeze-bn-:
-    profiles: ["Shared-nll", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+  shared-ea-bn-bnci:
+    profiles: ["Shared", "bnci"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: shared-ea-freeze-bn
-    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference --criterion_type CrossEntropyLoss"
+    container_name: shared-ea-bn
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -46,13 +46,13 @@ services:
             - driver: nvidia
               device_ids: ['1']
               capabilities: [ gpu ]
-  shared-NoEA-freeze-bn:
-    profiles: [ "Shared-nll", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+  shared-noea-bn-bnci:
+    profiles: [ "Shared", "bnci"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: shared-noea-freeze-bn
-    command: "python src/Bruna/domain_adapt_shared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference --criterion_type CrossEntropyLoss"
+    container_name: shared-noea-bn
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -60,14 +60,14 @@ services:
             - driver: nvidia
               device_ids: [ '1' ]
               capabilities: [ gpu ]
-## Hybrid
-  hybrid-EA-freeze-bn:
-    profiles: ["Hybrid-Center-bn", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+
+  shared-ea-bn-robin:
+    profiles: ["Shared", "robin"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze-bn
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False"
+    container_name: shared-ea-bn
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -75,13 +75,30 @@ services:
             - driver: nvidia
               device_ids: ['1']
               capabilities: [ gpu ]
-
-  hybrid-EA-freeze-CrossEntropyLoss-bn:
-    profiles: ["Normal", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+  shared-noea-bn-robin:
+    profiles: [ "Shared", "robin" ]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze-bn-CrossEntropyLoss
+    container_name: shared-noea-bn
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '1' ]
+              capabilities: [ gpu ]
+
+######## HYBRID EA ##########
+
+### BNCI
+  hybrid-ea-bn-bnci:
+    profiles: ["Hybrid-Center-bn", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
@@ -91,12 +108,42 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-EA-freeze-CrossEntropyLoss-bn-Choose:
-    profiles: ["Normal-Choose", "TEST", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+  hybrid-ea-bn-bnci-inference:
+    profiles: ["inf-hybrid", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze-bn-CrossEntropyLoss-choose
+    container_name: hybrid-ea-bn-inf
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-ea-bn-bnci-loss:
+    profiles: ["normal-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-bn-loss
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-ea-bn-bnci-choose:
+    profiles: ["choose-hybrid", "TEST", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-EA-bn-bnci-choose
     command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
@@ -106,28 +153,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-EA-freeze-lea:
-    profiles: [ "Hybrid-Center-lea", "EA", "Freeze", "Hybrid-BN"]
+  hybrid-ea-bn-bnci-loss-choose:
+    profiles: ["choose-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze-lea
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn LEA --criterion_type CrossEntropyLoss"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '1' ]
-              capabilities: [ gpu ]
-
-  hybrid-EA-freeze-bn-choosehead:
-    profiles: ["Hybrid", "EA", "Freeze", "Hybrid-BN-Choose"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-ea-freeze-bn-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
+    container_name: hybrid-ea-freeze-bn-loss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -136,121 +168,14 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
+#### ROBIN
 
-  hybrid-session-EA-freeze-CrossEntropyLoss-bn:
-    profiles: ["Session", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-ea-freeze-bn-CrossEntropyLoss-session
-    command: "python src/Bruna/domain_adapt_session.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
-#### ROBIN EA ALL BN
-
-  hybrid-ea-freeze-bn-robin:
+  hybrid-ea-bn-robin:
     profiles: ["Hybrid-robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze-bn-robin
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
-  hybrid-ea-freeze-bn-weibo:
-    profiles: [ "Hybrid-weibo", "test-weibo", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-ea-freeze-bn-weibo
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '1' ]
-              capabilities: [ gpu ]
-
-  hybrid-ea-freeze-bn-weibo-choose:
-    profiles: [ "Choose-weibo", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-ea-freeze-bn-weibo-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '1' ]
-              capabilities: [ gpu ]
-
-
-  hybrid-ea-freeze-bn-robin-inference:
-    profiles: ["Inference-robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-ea-freeze-bn-robin-inference
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --mode Inference  --criterion_type CrossEntropyLoss"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
-  shared-ea-freeze-bn-robin:
-    profiles: ["Shared-robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: shared-ea-freeze-bn-robin
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn LEA"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
-  shared-noea-freeze-bn-robin:
-    profiles: [ "Shared-robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: shared-noea-freeze-bn-robin
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn LEA"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '1' ]
-              capabilities: [ gpu ]
-
-  hybrid-ea-freeze-CrossEntropyLoss-bn-robin:
-    profiles: ["Normal-Robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-ea-freeze-bn-CrossEntropyLoss-robin
+    container_name: hybrid-ea-bn-robin
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
@@ -260,13 +185,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-ea-freeze-lea-robin:
-    profiles: [ "Hybrid-robin", "EA", "Freeze", "Hybrid-BN"]
+  hybrid-ea-bn-robin-inferece:
+    profiles: [ "inf-hybrid", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze-lea-robin
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn LEA --criterion_type CrossEntropyLoss"
+    container_name: hybrid-ea-bn-robin-inf
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -275,13 +200,13 @@ services:
               device_ids: [ '1' ]
               capabilities: [ gpu ]
 
-  hybrid-ea-freeze-bn-choosehead-robin:
-    profiles: ["Normal-Robin", "EA", "Freeze", "Hybrid-BN-Choose"]
+  hybrid-ea-bn-robin-loss:
+    profiles: ["normal-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-ea-freeze-bn-choose-robin
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --mode Inference --criterion_type CrossEntropyLoss"
+    container_name: hybrid-ea-bn-robin-loss
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -290,15 +215,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-#### BNCI NOEA ALL BN
-
-  hybrid-noEA-freeze-bn:
-    profiles: ["Hybrid-Center-bn", "freeze", "BN", "Hybrid-BN"]
+  hybrid-ea-bn-robin-choose:
+    profiles: ["choose-hybrid", "TEST", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False "
+    container_name: hybrid-EA-bn-robin-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -307,12 +230,108 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-noEA-freeze-CrossEntropyLoss-bn:
-    profiles: ["Normal", "EA", "Freeze", "Hybrid-BN", "test_noea"]
+  hybrid-ea-bn-robin-loss-choose:
+    profiles: ["choose-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-CrossEntropyLoss
+    container_name: hybrid-ea-robin-bn-loss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+###### WEIBO
+
+  hybrid-ea-bn-weibo:
+    profiles: ["Hybrid-weibo", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-bn-weibo
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-ea-bn-weibo-inference:
+    profiles: ["inf-hybrid", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-bn-weibo-inf
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-ea-bn-weibo-loss:
+    profiles: ["normal-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-bn-weibo-loss
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-ea-bn-weibo-choose:
+    profiles: ["choose-hybrid", "TEST", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-EA-bn-weibo-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-ea-bn-weibo-loss-choose:
+    profiles: ["choose-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-ea-weibo-bn-loss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+
+######## HYBRID NOEA ##########
+####  BNCI
+
+  hybrid-noea-bn-bnci:
+    profiles: ["Hybrid-Center-bn", "noEA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-bn
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
@@ -322,12 +341,42 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-noEA-freeze-CrossEntropyLoss-bn-Choose:
-    profiles: ["Normal-Choose", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+  hybrid-noea-bn-bnci-inference:
+    profiles: ["inf-hybrid", "noEA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-CrossEntropyLoss-choose
+    container_name: hybrid-noea-bn-inf
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-noea-bn-bnci-loss:
+    profiles: ["normal-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-bn-loss
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-noea-bn-bnci-choose:
+    profiles: ["choose-hybrid", "TEST", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-bn-bnci-choose
     command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
@@ -337,29 +386,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-
-  hybrid-noEA-freeze-lea:
-    profiles: [ "Hybrid-Center-lea", "No-EA", "freeze", "BN", "Hybrid-BN" ]
+  hybrid-noea-bn-bnci-loss-choose:
+    profiles: ["choose-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-lea
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn LEA"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '1' ]
-              capabilities: [ gpu ]
-
-  hybrid-session-noEA-freeze-CrossEntropyLoss-bn:
-    profiles: ["Session", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-noea-freeze-bn-CrossEntropyLoss-session
-    command: "python src/Bruna/domain_adapt_session.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    container_name: hybrid-noea-freeze-bn-loss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -368,12 +401,14 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-noEA-freeze-bn-robin:
-    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN-Schirrmeister"]
+#### ROBIN
+
+  hybrid-noea-bn-robin:
+    profiles: ["Hybrid-robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-robin-CrossEntropyLoss
+    container_name: hybrid-noea-bn-robin
     command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
@@ -383,28 +418,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-noEA-freeze-bn-shin:
-    profiles: ["Shin", "No-EA", "freeze", "BN", "Hybrid-BN-Schirrmeister"]
+  hybrid-noea-bn-robin-inference:
+    profiles: [ "inf-hybrid", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-shin-CrossEntropyLoss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Shin2017A --remove_bn False --criterion_type CrossEntropyLoss"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
-  hybrid-noea-freeze-bn-weibo:
-    profiles: [ "Hybrid-weibo", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-noea-freeze-bn-weibo
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    container_name: hybrid-noea-bn-robin-inf
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -413,13 +433,75 @@ services:
               device_ids: [ '1' ]
               capabilities: [ gpu ]
 
-  hybrid-noea-freeze-bn-weibo-choose:
-    profiles: [ "Choose-weibo", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+  hybrid-noea-bn-robin-loss:
+    profiles: ["normal-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-weibo-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    container_name: hybrid-noea-bn-robin-loss
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-noea-bn-robin-choose:
+    profiles: ["choose-hybrid", "TEST", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-bn-robin-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-noea-bn-robin-loss-choose:
+    profiles: ["choose-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-robin-bn-loss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+###### WEIBO
+
+  hybrid-noea-bn-weibo:
+    profiles: ["Hybrid-weibo", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-bn-weibo
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [ gpu ]
+
+  hybrid-noea-bn-weibo-inference:
+    profiles: [ "inf-hybrid", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+    extends:
+      file: base.yml
+      service: base-experiment
+    container_name: hybrid-noea-bn-weibo-inf
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -428,14 +510,13 @@ services:
               device_ids: [ '1' ]
               capabilities: [ gpu ]
 
-
-  hybrid-noEA-freeze-bn-robin-CrossEntropyLoss:
-    profiles: ["Normal-Robin", "No-EA", "freeze", "BN", "Hybrid-BN-Schirrmeister"]
+  hybrid-noea-bn-weibo-loss:
+    profiles: ["normal-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-robin-CrossEntropyLoss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    container_name: hybrid-noea-bn-weibo-loss
+    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -444,13 +525,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-noEA-freeze-bn-robin-inference:
-    profiles: ["Inference-robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+  hybrid-noea-bn-weibo-choose:
+    profiles: ["choose-hybrid", "TEST", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-robin-inference
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --mode Inference  --criterion_type CrossEntropyLoss"
+    container_name: hybrid-noea-bn-weibo-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -459,13 +540,13 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-  hybrid-noEA-freeze-bn-robin-choosehead:
-    profiles: ["Normal-Robin", "No-EA", "freeze", "BN", "Hybrid-BN-Choose"]
+  hybrid-noea-bn-weibo-loss-choose:
+    profiles: ["choose-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
-    container_name: hybrid-noea-freeze-bn-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --mode Inference  --criterion_type CrossEntropyLoss"
+    container_name: hybrid-noea-weibo-bn-loss-choose
+    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -474,36 +555,6 @@ services:
               device_ids: ['1']
               capabilities: [ gpu ]
 
-
-  hybrid-noEA-freeze-bn-inf:
-    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN-Inf"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-noea-freeze-bn-inference
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
-
-  hybrid-noEA-freeze-bn-choosehead:
-    profiles: ["Hybrid", "No-EA", "freeze", "BN", "Hybrid-BN-Choose"]
-    extends:
-      file: base.yml
-      service: base-experiment
-    container_name: hybrid-noea-freeze-bn-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --mode Inference"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['1']
-              capabilities: [ gpu ]
 
   jupyter:
     profiles: ["jupyter"]

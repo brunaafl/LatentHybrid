@@ -141,7 +141,7 @@ def parse_args():
         "--freeze",
         type=str,
         help="select whether to freeze shared layers in evaluation.",
-        default="no-freeze",
+        default="freeze",
         choices=["freeze", "no-freeze"],
     )
         
@@ -189,7 +189,7 @@ def parse_args():
         "--criterion_type",
         type=str,
         help="Select a loss function",
-        default="AlignmentLoss",
+        default="CrossEntropyLoss",
         choices=["AlignmentLoss", "NLLLoss", "CrossEntropyLoss"],
     )
 
