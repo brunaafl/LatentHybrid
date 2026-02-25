@@ -1,3 +1,4 @@
+import numpy as np
 from braindecode.datasets import create_from_X_y
 
 from numpy import unique
@@ -8,8 +9,9 @@ from alignment import euclidean_alignment, split_runs_EA
 
 
 class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
-    def __init__(self, kw_args=None):
+    def __init__(self, sfreq, kw_args=None):
         self.kw_args = kw_args
+        self.sfreq = sfreq
 
     def fit(self, X, y=None):
         self.y = y
@@ -18,16 +20,28 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
 
-        dataset = create_from_X_y(
-            X=X.get_data(),
-            y=self.y,
-            window_size_samples=X.get_data().shape[2],
-            window_stride_samples=X.get_data().shape[2],
-            drop_last_window=False,
-            sfreq=X.info["sfreq"],
-        )
+        if y is None:
+            y = self.y
 
-        # dataset_EA = preprocess(dataset,[Preprocessor(euclidean_alignment,apply_on_array=True)])
+        if isinstance(X, np.ndarray):
+
+            dataset = create_from_X_y(
+                X=X,
+                y=y,
+                window_size_samples=X.shape[2],
+                window_stride_samples=X.shape[2],
+                drop_last_window=False,
+                sfreq=self.sfreq )  # X.info["sfreq"]
+
+        else:
+            dataset = create_from_X_y(
+                X=X.get_data(),
+                y=self.y,
+                window_size_samples=X.get_data().shape[2],
+                window_stride_samples=X.get_data().shape[2],
+                drop_last_window=False,
+                sfreq=X.info["sfreq"],
+            )
 
         return dataset
 
@@ -37,26 +51,44 @@ class TransformaParaWindowsDataset(BaseEstimator, TransformerMixin):
 
 
 class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
-    def __init__(self, len_run, kw_args=None):
+    def __init__(self, len_run, sfreq, kw_args=None):
         self.kw_args = kw_args
         self.len_run = len_run
+        self.sfreq = sfreq
 
     def fit(self, X, y=None):
         self.y = y
         return self
 
     def transform(self, X, y=None):
-        X_EA = split_runs_EA(X.get_data(), self.len_run)
-        print('TRANSFORM EA')
 
-        dataset = create_from_X_y(
-            X=X_EA,
-            y=self.y,
-            window_size_samples=X.get_data().shape[2],
-            window_stride_samples=X.get_data().shape[2],
-            drop_last_window=False,
-            sfreq=X.info["sfreq"],
-        )
+        if y is None:
+            y = self.y
+
+        if isinstance(X, np.ndarray):
+
+            X_EA = split_runs_EA(X, self.len_run)
+
+            dataset = create_from_X_y(
+                X=X_EA,
+                y=y,
+                window_size_samples=X_EA.shape[2],
+                window_stride_samples=X_EA.shape[2],
+                drop_last_window=False,
+                sfreq=self.freq )  # X.info["sfreq"]
+
+        else:
+
+            X_EA = split_runs_EA(X.get_data(), self.len_run)
+
+            dataset = create_from_X_y(
+                X=X_EA,
+                y=self.y,
+                window_size_samples=X_EA.shape[2],
+                window_stride_samples=X_EA.shape[2],
+                drop_last_window=False,
+                sfreq=X.info["sfreq"],
+            )
 
         return dataset
 

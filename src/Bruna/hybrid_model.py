@@ -3,7 +3,7 @@ import copy
 import torch
 from torch import nn
 
-from braindecode.models import  Deep4Net, ShallowFBCSPNet, EEGNetv4
+from braindecode.models import Deep4Net, ShallowFBCSPNet, EEGNetv4, EEGNeX
 
 from torch.nn import init
 
@@ -42,56 +42,61 @@ def initmod(module):
     init.xavier_uniform_(module.weight, gain=1)
     return module
 
+def gen_slice_EEGNeX(n_chans, n_classes, input_window_samples, config, start=0, end=6, remove_bn=False):
 
-def gen_slice_EEGNet_normtest(n_chans, n_classes, input_window_samples, config, start=0, end=19, norm=nn.BatchNorm2d):
-    temp_model = EEGNetv4(
-        n_chans,
-        n_classes,
-        input_window_samples=input_window_samples,
-        final_conv_length=config.model.final_conv_length,
-        drop_prob=config.model.drop_prob
+    if start == 0 and end < 6:
+        drop_prob = config.model.drop_prob * 0.9
+    else:
+        drop_prob = config.model.drop_prob
+
+    temp_model = EEGNeX(
+        n_chans=n_chans,
+        n_outputs=n_classes,
+        n_times=input_window_samples,
+        drop_prob=drop_prob
     )
 
-    if end == 0:
-        return nn.Identity()
+    if end == 6 and start == 0:
 
-    if end == len(list(temp_model.children())) and start == 0:
+        if remove_bn == 'LEA':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = LatentEuclideanAlignment()
+        elif remove_bn == 'True':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = nn.Identity()
+
         return temp_model
 
+    if start==0 and end == 0:
+        return nn.Identity()
+
     net = list(temp_model.children())[start:end]
-    if norm != nn.BatchNorm2d:
+    if remove_bn == 'True':
         for i, module in enumerate(net):
             if isinstance(net[i], nn.BatchNorm2d):
-                net[i] = norm()
+                net[i] = nn.Identity()
+    elif remove_bn == 'LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                net[i] = LatentEuclideanAlignment()
+    elif remove_bn == 'One-bn':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                if i == len(net) - 1 and start == 0:
+                    net[i] = net[i]
+                else:
+                    net[i] = nn.Identity()
+    elif remove_bn == 'One-LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                if i == len(net) - 1 and start == 0:
+                    net[i] = LatentEuclideanAlignment()
+                else:
+                    net[i] = nn.Identity()
     return nn.Sequential(*net)
 
-
-def gen_slice_DeepNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, remove_bn=False):
-    temp_model = Deep4Net(
-        n_chans,
-        n_classes,
-        input_window_samples=input_window_samples,
-        final_conv_length=config.model.final_conv_length,
-        drop_prob=config.model.drop_prob
-    )
-
-    if end == len(list(temp_model.children())) and start == 0:
-        return temp_model
-
-    if end == 0:
-        return nn.Identity()
-
-    if remove_bn:
-        for i, module in enumerate(temp_model):
-            if isinstance(temp_model[i], nn.BatchNorm2d):
-                pass
-            # temp_model[i] = nn.Identity()
-
-    net = list(temp_model.children())[start:end]
-    if not remove_bn:
-        net.append(nn.ELU())
-
-    return nn.Sequential(*net)
 
 
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn='False', ):
@@ -181,13 +186,11 @@ def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start
 
 
 model_gen = {
-    "DeepNet": [gen_slice_DeepNet, 8, 9],
     "EEGNet": [gen_slice_EEGNet, 12, 12],
+    "EEGNeX": [gen_slice_EEGNet, 5, 5],
     "ShallowNet": [gen_slice_ShallowNet, 4, 4],
     "ShallowNetShared": [gen_slice_ShallowNet, 0, 0],
     "EEGNetShared": [gen_slice_EEGNet, 0, 0],
-    "DeepNetShared": [gen_slice_DeepNet, 0, 0],
-    "EEGNetNormTest": [gen_slice_EEGNet_normtest, 5, 6],
 }
 
 norms = {
@@ -322,31 +325,3 @@ class SpecializedModel(nn.Module):
         #return result, feat
         return result.transpose(0, 1), feat.transpose(0, 1)
 
-    def forward_and_predict(self, x):
-
-        inputs = self.split_input(x)
-        out, feat = [], []
-        for i, model_input in enumerate(inputs):
-            temp_unique = self.unique_modules(model_input)
-            feat.append(temp_unique)
-            temp_shared = self.shared_modules(temp_unique)
-            out.append(temp_shared)
-
-        result = torch.stack(out)
-
-        feat = torch.stack(feat)
-        if result.requires_grad:
-            result.retain_grad()
-            feat.retain_grad()
-
-        return result.transpose(0, 1), feat.transpose(0, 1)
-
-    def specialized_predict(self, X):
-        pred, feat = self.forward_and_predict(X)
-        print(pred.shape)
-        print(feat.shape)
-
-        y_pred = pred.reshape(-1, pred.size(-1)).argmax(dim=1)
-        feat_flat = feat.reshape(-1, feat.size(-1)).to('cpu')
-
-        return y_pred, feat_flat

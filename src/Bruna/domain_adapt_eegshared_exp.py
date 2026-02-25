@@ -21,11 +21,9 @@ from sklearn.base import clone
 from moabb.utils import set_download_dir
 
 from pipeline import TransformaParaWindowsDataset, TransformaParaWindowsDatasetEA
-from shared_evaluation import SharedEvaluation, EEGSharedEvaluation
+from shared_evaluation import EEGSharedEvaluation
 from paradigm import MotorImagery_
-from hybrid_transform import HybridAggregateTransform
-from hybrid_classifier import define_hybrid_clf
-from train import define_clf, init_model, define_clf_hybrid
+from train import define_clf, init_model
 from util import parse_args, set_determinism, set_run_dir
 
 """
@@ -63,8 +61,7 @@ def main(args):
         subjects = dataset.subject_list
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
-        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
-              "CP1", "CPz", "CP6", "CP4", "CP2"]
+        ch = None
     elif args.dataset == 'Shin2017A':
         dataset = Shin2017A(accept=True)
         ch = None
@@ -88,16 +85,12 @@ def main(args):
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
-    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1])
+    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1], return_epochs=True)
+    sfreq = X.info['sfreq']
+    X = X.get_data()
     n_chans = X.shape[1]
     input_window_samples = X.shape[2]
-    runs = meta.run.values
-    sessions = meta.session.values
-    subjects = meta.subject.values
-    one_session = sessions == "session_T"
-    one_run = runs == 'run_0'
-    run_session = np.logical_and(one_session, one_run)
-    len_run = config.train.len_run
+    len_run = config.train.len_run if args.ea else None
 
     model = init_model(n_chans, n_classes, input_window_samples, config=config)
 
@@ -108,8 +101,8 @@ def main(args):
     # Create Classifier
     clf = define_clf(model, config, warm_start=True, experiment_name='EEGClassifier')
 
-    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run)
-    create_dataset = TransformaParaWindowsDataset()
+    create_dataset_with_align = TransformaParaWindowsDatasetEA(len_run, sfreq)
+    create_dataset = TransformaParaWindowsDataset(sfreq)
 
     pipes = {}
 
@@ -132,17 +125,18 @@ def main(args):
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,
-        n_jobs=-1,
+        n_jobs=1,
         eval_config=eval_config,
         len_run=len_run,
         EA_in_eval=(args.ea == 'alignment'),
+        online='on'
     )
 
     results = evaluation.process(pipes)
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/baseline-{args.criterion_type}_{experiment_name}_results.csv")
+    results.to_csv(f"{run_dir}/{args.ea}_EEGNetShared_bn_ChooseHead_{args.dataset}.csv")
 
     print("---------------------------------------")
 

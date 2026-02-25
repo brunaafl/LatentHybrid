@@ -56,8 +56,6 @@ def main(args):
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
-    # Define paradigm and datasets
-
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
@@ -67,8 +65,9 @@ def main(args):
         subjects = dataset.subject_list
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
-        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
-              "CP1", "CPz", "CP6", "CP4", "CP2"]
+        ch = None
+        '''ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]'''
     elif args.dataset == 'Lee2019_MI':
         dataset = Lee2019_MI()
     elif args.dataset == 'Schirrmeister2017':
@@ -110,7 +109,7 @@ def main(args):
     # Create Classifier
     print(args)
     criterion_type = args.criterion_type  # Define the loss function to use
-    clf = define_hybrid_clf(model, config, experiment_name, criterion_type)
+    clf = define_hybrid_clf(model, config, experiment_name, criterion_type, dataset=args.dataset)
     print(f"(3) Created clf {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
     print(f"Type of loss function: {criterion_type}")
 
@@ -151,7 +150,7 @@ def main(args):
         overwrite=overwrite,
         return_epochs=True,
         hdf5_path=run_dir,
-        n_jobs=-1,
+        n_jobs=1,
         eval_config=eval_config,
         EA_in_eval=(args.ea == 'alignment'),
         len_run=len_run,
@@ -159,7 +158,8 @@ def main(args):
         run_dir=run_dir,
         mode=args.mode,
         remove_bn = args.remove_bn,
-        criterion_type = args.criterion_type
+        criterion_type = args.criterion_type,
+        choose=True
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
@@ -170,7 +170,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/Choose-{experiment_name}_{args.remove_bn}_{eval_config.train.lr}_results.csv")
+    results.to_csv(f"{run_dir}/{args.ea}_CenterLoss_bn_ChooseHead_{args.dataset}.csv")
     
     print("---------------------------------------")
 

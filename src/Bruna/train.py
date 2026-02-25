@@ -78,7 +78,7 @@ def define_clf(model, config, experiment_name, warm_start=True):
 
     clf = EEGClassifier(
         model,
-        criterion=torch.nn.NLLLoss,
+        criterion=torch.nn.CrossEntropyLoss,
         optimizer=torch.optim.AdamW,
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,
@@ -127,7 +127,7 @@ def define_clf_hybrid(model, config, warm_start=True, experiment_name=None):
 
     clf = HybridClassifier(
         model,
-        criterion=torch.nn.NLLLoss,
+        criterion=torch.nn.CrossEntropyLoss,
         optimizer=torch.optim.AdamW,
         train_split=ValidSplit(config.train.valid_split, random_state=config.seed),
         optimizer__lr=lr,
@@ -150,9 +150,9 @@ def define_clf_hybrid(model, config, warm_start=True, experiment_name=None):
 
 def init_model(n_chans, n_classes, input_window_samples, config):
     model = EEGNetv4(
-        n_chans,
-        n_classes,
-        input_window_samples=input_window_samples,
+        n_chans=n_chans,
+        n_outputs=n_classes,
+        n_times=input_window_samples,
         final_conv_length=config.model.final_conv_length,
         drop_prob=config.model.drop_prob
     )

@@ -66,12 +66,12 @@ def main(args):
         subjects = dataset.subject_list
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
-        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
-              "CP1", "CPz", "CP6", "CP4", "CP2"]
+        ch=None
+        '''ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]'''
     elif args.dataset == 'Shin2017A':
         dataset = Shin2017A(accept=True)
         ch = None
-
     elif args.dataset == 'Schirrmeister2017':
         ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
               "CP1", "CPz", "CP6", "CP4", "CP2"]
@@ -79,9 +79,6 @@ def main(args):
         subjects = dataset.subject_list
         subjects.pop(0)
         dataset.subject_list = subjects
-    elif args.dataset == 'PhysionetMI':
-        dataset = PhysionetMI()
-        paradigm = LeftRightImagery(resample=100.0)
 
     events = ["right_hand", "left_hand"]
 
@@ -103,7 +100,6 @@ def main(args):
     model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config,
                         freeze=args.freeze, args=args)
     # Send model to GPU
-
     if cuda:
         model.cuda()
     torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
@@ -111,7 +107,7 @@ def main(args):
     # Create Classifier
     print(args)
     criterion_type = args.criterion_type  # Define the loss function to use
-    clf = define_hybrid_clf(model, config, experiment_name, criterion_type)
+    clf = define_hybrid_clf(model, config, experiment_name, criterion_type, dataset=args.dataset)
 
     print(f"(3) Created clf {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
     print(f"Type of loss function: {criterion_type}")
@@ -182,7 +178,7 @@ def main(args):
     print(run_dir)
     print(experiment_name)
     #print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
+    results.to_csv(f"{run_dir}/{args.ea}_NormalHybrid_bn_{args.dataset}_{args.mode}.csv")
     #results.to_csv(f"{run_dir}/Test-refactoring_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
 
     print("---------------------------------------")

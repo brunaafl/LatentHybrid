@@ -6,7 +6,7 @@ import torch.nn as nn
 from numpy import random
 
 class JointAlignmentLoss(nn.Module):
-    def __init__(self, feat_dim=(16, 1, 251), num_classes=2, centroids=None, lambd = 1):
+    def __init__(self, feat_dim=(16, 1, 201), num_classes=2, centroids=None, lambd = 1):
         super(JointAlignmentLoss, self).__init__()
 
         # feat_dim=(16, 1, 501) for schirmeister and (16, 1, 251) for bnci
@@ -27,7 +27,7 @@ class JointAlignmentLoss(nn.Module):
         # Maybe mean squared loss is not the best
         self.mse_loss = nn.MSELoss()
         #self.kl = nn.KLDivLoss()
-        self.nll = nn.NLLLoss()
+        self.nll = nn.CrossEntropyLoss()
 
         self.lambd = lambd
 

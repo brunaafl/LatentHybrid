@@ -3,12 +3,11 @@ import mne
 from time import time
 import numpy as np
 import pandas as pd
-import torch
 
 from braindecode.datasets import BaseDataset, BaseConcatDataset
 from braindecode.preprocessing import create_fixed_length_windows
 
-from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from alignment import split_runs_EA
 
@@ -71,44 +70,20 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
 
         return X_aux
 
-    def sample_data(self, X):
-
-        sample = self.sample
-        X_aux = []
-        m = self.EA_len_run
-        n = X.shape[0]
-        n_samples = int(m * sample)
-
-        for k in range(int(n / m)):
-            run = X[k * m:(k + 1) * m]
-            idx = np.random.randint(0, m, n_samples)
-            X_aux.append(run[idx])
-        X_EA = np.concatenate(X_aux)
-        return X_EA
-
     def transform(self, X, y=None):
         initial_time = time()
 
         if self.data_code == 'Schirrmeister2017':
             X_aux = self.sample_Schirrmeister(X)
-
         else:
             X_aux = X.get_data()
-
-        if self.sample is not None:
-            if type(self.sample)==float:
-                X_aux, labels_aux, groups_aux = self.sample_data(X_aux)
-                self.labels = labels_aux
-                self.groups = groups_aux
-
-                # update the size of the run
-                self.EA_len_run = int(self.EA_len_run * self.sample)
 
         # If EA is required
         if self.use_EA:
             X = split_runs_EA(X_aux, self.EA_len_run)
         else:
             X = X_aux * 1e6
+
         print(f"(1) EA {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
 
         # Create dict mapping each individual to their labeled trials
@@ -130,7 +105,7 @@ class HybridAggregateTransform(BaseEstimator, TransformerMixin):
         print(f"(3) Setup {(time() - initial_time) * 1000}ms | {(time() - initial_time)}s")
 
         new_trials = []
-        # Reorder trial
+        # Reshape data format of each trial: (subjects, data)
         for trial_i in range(n_trials_per_subject):
             trial = []
             target = []

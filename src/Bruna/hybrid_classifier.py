@@ -15,6 +15,7 @@ from hybrid_scoring import HybridScoring
 from alignment_loss import JointAlignmentLoss
 
 criterion_types = {'AlignmentLoss':JointAlignmentLoss, 'NLLLoss':NLLLoss, 'CrossEntropyLoss': CrossEntropyLoss}
+dataset_latent_dim = {'BNCI2014001': (16, 1, 251), 'Schirrmeister2017': (16, 1, 501), 'Weibo2014':(16, 1, 201)}
 
 # Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):
@@ -106,7 +107,7 @@ def average_acc_scoring(model, x, y_true):
     return sum(accuracies_per_subject) / len(accuracies_per_subject)
 
 
-def define_hybrid_clf(model, config, experiment_name, criterion_type):
+def define_hybrid_clf(model, config, experiment_name, criterion_type, dataset='Weibo2014'):
     """
     Transform the pytorch model into classifier object to be used in the training
     Parameters
@@ -115,6 +116,8 @@ def define_hybrid_clf(model, config, experiment_name, criterion_type):
     experiment_name: string with the name of the experiment
     model: pytorch model
     config: dict with the configuration parameters
+    dataset: dataset code for choosing the right latent dimensions
+
     Returns
     -------
     clf: skorch classifier
@@ -131,6 +134,10 @@ def define_hybrid_clf(model, config, experiment_name, criterion_type):
                                        lower_is_better=False) for i in range(model.num_models)]
 
     criterion = criterion_types[criterion_type]
+
+    if criterion_type=='AlignmentLoss': criterion_kwargs = {"criterion__feat_dim": dataset_latent_dim[dataset]}
+    else: criterion_kwargs = {}
+
     clf = HybridClassifier(
         module=model,
         criterion=criterion,
@@ -155,5 +162,6 @@ def define_hybrid_clf(model, config, experiment_name, criterion_type):
         device=device,
         verbose=1,
         warm_start=True,
+        **criterion_kwargs
     )
     return clf
