@@ -4,9 +4,9 @@ train:
     run_report: '/workspace/outputs/'
     n_epochs: 500 #500
     patience: 150
-    weight_decay: 0.001
+    weight_decay: 0.0005
     batch_size: 64
-    lr: 0.001
+    lr: 0.0005
     len_run: 20
     valid_split: 0.2
     experiment_name: 'shared-hybridtest-batch12'

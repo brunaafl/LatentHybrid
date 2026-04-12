@@ -71,7 +71,7 @@ def compute_EA(X, size=24, domain=None, estimator='lwf', dtype='raw'):
         covmat_EA = np.concatenate(X_aux)
     return covmat_EA
 
-def split_runs_EA(X, len_run):
+def split_runs_EA(X, len_run, y=None):
     X_aux = []
     m = len_run
     n = X.shape[0]

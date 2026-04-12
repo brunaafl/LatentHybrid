@@ -79,13 +79,13 @@ def main(args):
 
     events = ["right_hand", "left_hand"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
+    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch, resample=250)
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
-    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[1], return_epochs=True)
+    X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[2], return_epochs=True)
     sfreq = X.info['sfreq']
     X = X.get_data()
     n_chans = X.shape[1]
@@ -136,7 +136,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/{args.ea}_EEGNetShared_bn_ChooseHead_{args.dataset}.csv")
+    results.to_csv(f"{run_dir}/{args.ea}_EEGNetShared_bn_{args.dataset}_{args.model}_online.csv")
 
     print("---------------------------------------")
 

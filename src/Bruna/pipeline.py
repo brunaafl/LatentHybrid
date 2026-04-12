@@ -75,7 +75,7 @@ class TransformaParaWindowsDatasetEA(BaseEstimator, TransformerMixin):
                 window_size_samples=X_EA.shape[2],
                 window_stride_samples=X_EA.shape[2],
                 drop_last_window=False,
-                sfreq=self.freq )  # X.info["sfreq"]
+                sfreq=self.sfreq )  # X.info["sfreq"]
 
         else:
 

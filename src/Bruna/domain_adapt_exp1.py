@@ -3,8 +3,9 @@ import warnings
 import braindecode
 import torch
 import moabb
+import random
 from joblib import parallel_backend
-from moabb.datasets import BNCI2014_001, Weibo2014, Shin2017A, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014_001, BNCI2014_002, Weibo2014, Shin2017A, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -54,24 +55,37 @@ def main(args):
     cuda = (
         torch.cuda.is_available()
     )  # check if GPU is available, if True chooses to use it
-    # Define paradigm and datasets
-
-    print(braindecode.__version__)
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014_001()
         ch=None
-        subjects = dataset.subject_list
+        events = ["right_hand", "left_hand"]
+
+    elif args.dataset == 'BNCI2014002':
+        dataset = BNCI2014_002()
+        ch=None
+        events = ["right_hand", "feet"]
+
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
         ch=None
-        '''ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
-              "CP1", "CPz", "CP6", "CP4", "CP2"]'''
+        events = ["right_hand", "left_hand"]
+
     elif args.dataset == 'Shin2017A':
         dataset = Shin2017A(accept=True)
         ch = None
+        events = ["right_hand", "left_hand"]
+
+    elif args.dataset == 'PhysionetMI':
+        dataset = PhysionetMI()
+        ch = None
+        subjects = dataset.subject_list
+        sample = random.sample(subjects,15)
+        dataset.subject_list = sample
+        events = ["right_hand", "left_hand"]
+
     elif args.dataset == 'Schirrmeister2017':
         ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
               "CP1", "CPz", "CP6", "CP4", "CP2"]
@@ -79,10 +93,9 @@ def main(args):
         subjects = dataset.subject_list
         subjects.pop(0)
         dataset.subject_list = subjects
+        events = ["right_hand", "left_hand"]
 
-    events = ["right_hand", "left_hand"]
-
-    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
+    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch, resample=250)
 
     datasets = [dataset]
     events = ["left_hand", "right_hand"]
@@ -178,7 +191,7 @@ def main(args):
     print(run_dir)
     print(experiment_name)
     #print(f"{run_dir}/Heads-shared_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
-    results.to_csv(f"{run_dir}/{args.ea}_NormalHybrid_bn_{args.dataset}_{args.mode}.csv")
+    results.to_csv(f"{run_dir}/{args.ea}_NormalHybrid_bn_{args.dataset}_{args.model}_{args.mode}.csv")
     #results.to_csv(f"{run_dir}/Test-refactoring_{experiment_name}_{args.remove_bn}_{criterion_type}_{args.mode}_results.csv")
 
     print("---------------------------------------")

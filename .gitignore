@@ -128,3 +128,7 @@ dmypy.json
 .pyre/
 
 /wandb/
+
+# Additional data files
+*.hdf5
+*.lock

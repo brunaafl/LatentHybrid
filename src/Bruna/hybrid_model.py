@@ -1,53 +1,132 @@
 import copy
-
+import braindecode
 import torch
 from torch import nn
 
-from braindecode.models import Deep4Net, ShallowFBCSPNet, EEGNetv4, EEGNeX
+from braindecode.models import ShallowFBCSPNet, EEGNetv4, EEGNeX, AttentionBaseNet
 
 from torch.nn import init
 
 from torch.nn.modules.lazy import LazyModuleMixin
 from torch.nn.parameter import UninitializedParameter
 
-from sqrtm import sqrtm
-#from eegnet import EEGNetv4
+last_layer = {'EEGNet':19, 'EEGNeX':6, 'AttentionBaseNet':4}
 
 
-class LazyLayerNorm(LazyModuleMixin, nn.LayerNorm):
-    cls_to_become = nn.LayerNorm
+def gen_slice_model(model,n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn=False):
 
-    def __init__(self, eps=1e-5, elementwise_affine=True) -> None:
-        super().__init__(0, eps, elementwise_affine)
+    last = last_layer[model]
+    if start == 0 and end < last:
+        drop_prob = config.model.drop_prob * 0.9
+    else:
+        drop_prob = config.model.drop_prob
 
-        self.eps = eps
-        self.elementwise_affine = elementwise_affine
+    model_class = getattr(braindecode.models, model)
 
-        if self.elementwise_affine:
-            self.weight = UninitializedParameter()
-            self.bias = UninitializedParameter()
-        else:
-            self.register_parameter("weight", None)
-            self.register_parameter("bias", None)
+    temp_model = model_class(
+        n_chans=n_chans,
+        n_outputs=n_classes,
+        n_times=input_window_samples,
+    )
 
-    def initialize_parameters(self, input) -> None:
-        self.normalized_shape = tuple(input.size()[1:])
-        if self.has_uninitialized_params():
-            with torch.no_grad():
-                self.weight.materialize(self.normalized_shape)
-                self.bias.materialize(self.normalized_shape)
+    if end == last and start == 0:
 
+        if remove_bn == 'LEA':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = LatentEuclideanAlignment()
+        elif remove_bn == 'True':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = nn.Identity()
 
-def initmod(module):
-    init.xavier_uniform_(module.weight, gain=1)
-    return module
+        return temp_model
+
+    if start==0 and end == 0:
+        return nn.Identity()
+
+    net = list(temp_model.children())[start:end]
+    if remove_bn == 'True':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                net[i] = nn.Identity()
+    elif remove_bn == 'LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                net[i] = LatentEuclideanAlignment()
+    elif remove_bn == 'One-bn':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                if i == len(net) - 1 and start == 0:
+                    net[i] = net[i]
+                else:
+                    net[i] = nn.Identity()
+    elif remove_bn == 'One-LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                if i == len(net) - 1 and start == 0:
+                    net[i] = LatentEuclideanAlignment()
+                else:
+                    net[i] = nn.Identity()
+    return nn.Sequential(*net)
+
+def gen_slice_ABN(n_chans, n_classes, input_window_samples, config, start=0, end=4, remove_bn=False):
+
+    # TODO: add attention next
+    temp_model = AttentionBaseNet(
+        n_chans=n_chans,
+        n_outputs=n_classes,
+        n_times=input_window_samples,
+    )
+
+    if end == 6 and start == 0:
+
+        if remove_bn == 'LEA':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = LatentEuclideanAlignment()
+        elif remove_bn == 'True':
+            for i, module in enumerate(temp_model):
+                if isinstance(temp_model[i], nn.BatchNorm2d):
+                    temp_model[i] = nn.Identity()
+
+        return temp_model
+
+    if start==0 and end == 0:
+        return nn.Identity()
+
+    net = list(temp_model.children())[start:end]
+    if remove_bn == 'True':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                net[i] = nn.Identity()
+    elif remove_bn == 'LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                net[i] = LatentEuclideanAlignment()
+    elif remove_bn == 'One-bn':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                if i == len(net) - 1 and start == 0:
+                    net[i] = net[i]
+                else:
+                    net[i] = nn.Identity()
+    elif remove_bn == 'One-LEA':
+        for i, module in enumerate(net):
+            if isinstance(net[i], nn.BatchNorm2d):
+                if i == len(net) - 1 and start == 0:
+                    net[i] = LatentEuclideanAlignment()
+                else:
+                    net[i] = nn.Identity()
+    return nn.Sequential(*net)
+
 
 def gen_slice_EEGNeX(n_chans, n_classes, input_window_samples, config, start=0, end=6, remove_bn=False):
 
     if start == 0 and end < 6:
-        drop_prob = config.model.drop_prob * 0.9
+        drop_prob = 0.5
     else:
-        drop_prob = config.model.drop_prob
+        drop_prob = 0.5 * 0.9
 
     temp_model = EEGNeX(
         n_chans=n_chans,
@@ -96,8 +175,6 @@ def gen_slice_EEGNeX(n_chans, n_classes, input_window_samples, config, start=0, 
                 else:
                     net[i] = nn.Identity()
     return nn.Sequential(*net)
-
-
 
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn='False', ):
     # Maybe? Does it make any sense?
@@ -159,37 +236,11 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
     return nn.Sequential(*net)
 
 
-def gen_slice_ShallowNet(n_chans, n_classes, input_window_samples, config, start=0, end=29, drop_prob=0.5,
-                         remove_bn=True, bn_end=True):
-    temp_model = ShallowFBCSPNet(
-        n_chans,
-        n_classes,
-        input_window_samples=input_window_samples,
-        final_conv_length=config.model.final_conv_length,
-        drop_prob=config.model.drop_prob
-    )
-
-    if end == len(list(temp_model.children())) and start == 0:
-        return temp_model
-
-    if end == 0:
-        return nn.Identity()
-
-    if remove_bn:
-        for i, module in enumerate(temp_model):
-            if isinstance(temp_model[i], nn.BatchNorm2d):
-                pass
-
-    net = list(temp_model.children())[start:end]
-
-    return nn.Sequential(*net)
-
 
 model_gen = {
     "EEGNet": [gen_slice_EEGNet, 12, 12],
     "EEGNeX": [gen_slice_EEGNet, 5, 5],
-    "ShallowNet": [gen_slice_ShallowNet, 4, 4],
-    "ShallowNetShared": [gen_slice_ShallowNet, 0, 0],
+    "AttentionBaseNet": [gen_slice_ABN, 3, 3],
     "EEGNetShared": [gen_slice_EEGNet, 0, 0],
 }
 
@@ -197,7 +248,6 @@ norms = {
     "Identity": nn.Identity,
     "BatchNorm2d": nn.LazyBatchNorm2d,
     "InstanceNorm2d": nn.LazyInstanceNorm2d,
-    "LayerNorm": LazyLayerNorm,
 }
 
 class LatentEuclideanAlignment(nn.Module):

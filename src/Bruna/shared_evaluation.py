@@ -62,6 +62,23 @@ class EEGSharedEvaluation(BaseEvaluation):
         n_subjects = len(dataset.subject_list)
         scorer = get_scorer(self.paradigm.scoring)
 
+        if dataset.code=='Schirrmeister2017':
+            X_aux = [];labels_aux = []; groups_aux = []
+            for subj in np.unique(groups):
+                mask = groups == subj
+                X_subj = X[mask].get_data()
+                X_subj = X_subj[:408, :, :]
+                y_subj = y[mask]
+                y_subj = y_subj[:408]
+                groups_subj = groups[mask]
+                groups_subj = groups_subj[:408]
+                X_aux.append(X_subj)
+                labels_aux.append(y_subj)
+                groups_aux.append(groups_subj)
+            X = np.concatenate(X_aux)
+            y = np.concatenate(labels_aux)
+            groups = np.concatenate(groups_aux)
+
         print(f"(3) Setup done {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
         cv = LeaveOneGroupOut()
@@ -92,7 +109,7 @@ class EEGSharedEvaluation(BaseEvaluation):
 
                 # Define indices for Calibration and Evaluation
                 # Separate len_run*2 trials for calibration
-                ix_calib = test < (self.len_run * 2 + test[0])
+                ix_calib = test < (self.len_run + test[0])
                 # Evaluation indices
                 ix_eval = np.logical_and(test >= (self.len_run * 2 + test[0]),
                                          test < (test[0] + len(test)))
@@ -102,9 +119,11 @@ class EEGSharedEvaluation(BaseEvaluation):
                     # FIX: Use set_params to replace the pipeline step instead of direct assignment
                     model.set_params(Braindecode_dataset=TransformaParaWindowsDataset(sfreq))
 
+                    X_calib = X[test[ix_calib]] if isinstance(X, np.ndarray) else X[test[ix_calib]].get_data()
                     # Perform Euclidean Alignment
-                    _, r = euclidean_alignment(X[test[ix_calib]].get_data()[:self.len_run])
-                    X_eval = np.matmul(r, X[test[ix_eval]].get_data())
+                    _, r = euclidean_alignment(X_calib[:self.len_run])
+                    X_tr = X[test[ix_eval]] if isinstance(X, np.ndarray) else X[test[ix_eval]].get_data()
+                    X_eval = np.matmul(r, X_tr)
                 else:
                     X_eval = X[test[ix_eval]]
 
