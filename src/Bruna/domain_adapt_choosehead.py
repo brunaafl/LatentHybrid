@@ -6,7 +6,7 @@ import warnings
 
 import torch
 import moabb
-from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, PhysionetMI, Weibo2014
+from moabb.datasets import BNCI2014_001, Cho2017, Lee2019_MI, Schirrmeister2017, BNCI2015_001, Weibo2014
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -58,6 +58,7 @@ def main(args):
     )  # check if GPU is available, if True chooses to use it
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
+    events = ["right_hand", "left_hand"]
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014_001()
@@ -77,16 +78,14 @@ def main(args):
         subjects = dataset.subject_list
         subjects.pop(0)
         dataset.subject_list = subjects
-    elif args.dataset == 'PhysionetMI':
-        dataset = PhysionetMI()
-        paradigm = LeftRightImagery(resample=100.0)
-
-    events = ["right_hand", "left_hand"]
+    elif args.dataset == 'BNCI2015001':
+        dataset = BNCI2015_001()
+        ch = None
+        events = ["right_hand", "feet"]
 
     paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
 
     datasets = [dataset]
-    events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[2])

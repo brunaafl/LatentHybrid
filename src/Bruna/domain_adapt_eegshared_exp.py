@@ -12,7 +12,7 @@ import torch
 
 import numpy as np
 
-from moabb.datasets import BNCI2014_001, Shin2017A, Lee2019_MI, Schirrmeister2017, PhysionetMI, Weibo2014
+from moabb.datasets import BNCI2014_001, BNCI2015_001, Lee2019_MI, Schirrmeister2017, PhysionetMI, Weibo2014
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -55,6 +55,8 @@ def main(args):
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
 
+    events = ["right_hand", "left_hand"]
+
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014_001()
         ch=None
@@ -62,10 +64,10 @@ def main(args):
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
         ch = None
-    elif args.dataset == 'Shin2017A':
-        dataset = Shin2017A(accept=True)
+    elif args.dataset == 'BNCI2015001':
+        dataset = BNCI2015_001()
         ch = None
-
+        events = ["right_hand", "feet"]
     elif args.dataset == 'Schirrmeister2017':
         ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
               "CP1", "CPz", "CP6", "CP4", "CP2"]
@@ -77,12 +79,9 @@ def main(args):
         dataset = PhysionetMI()
         paradigm = LeftRightImagery(resample=100.0)
 
-    events = ["right_hand", "left_hand"]
-
     paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch, resample=250)
 
     datasets = [dataset]
-    events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[2], return_epochs=True)

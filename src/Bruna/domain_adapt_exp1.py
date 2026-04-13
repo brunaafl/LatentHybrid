@@ -5,7 +5,7 @@ import torch
 import moabb
 import random
 from joblib import parallel_backend
-from moabb.datasets import BNCI2014_001, BNCI2014_002, Weibo2014, Shin2017A, Schirrmeister2017, PhysionetMI
+from moabb.datasets import BNCI2014_001, BNCI2015_001, Weibo2014, Shin2017A, Schirrmeister2017, PhysionetMI
 from moabb.paradigms import MotorImagery, LeftRightImagery
 
 from omegaconf import OmegaConf
@@ -63,8 +63,8 @@ def main(args):
         ch=None
         events = ["right_hand", "left_hand"]
 
-    elif args.dataset == 'BNCI2014002':
-        dataset = BNCI2014_002()
+    elif args.dataset == 'BNCI2015001':
+        dataset = BNCI2015_001()
         ch=None
         events = ["right_hand", "feet"]
 
