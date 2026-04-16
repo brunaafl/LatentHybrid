@@ -70,7 +70,8 @@ def main(args):
 
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
-        ch=None
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
         events = ["right_hand", "left_hand"]
 
     elif args.dataset == 'Shin2017A':
@@ -112,6 +113,7 @@ def main(args):
 
     model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config,
                         freeze=args.freeze, args=args)
+
     # Send model to GPU
     if cuda:
         model.cuda()
@@ -171,6 +173,7 @@ def main(args):
         mode=args.mode,
         remove_bn=args.remove_bn,
         criterion_type = args.criterion_type,
+        dataset_code=args.dataset
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")

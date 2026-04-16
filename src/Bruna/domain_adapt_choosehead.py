@@ -58,19 +58,23 @@ def main(args):
     )  # check if GPU is available, if True chooses to use it
 
     print(f"(1) Initial {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
-    events = ["right_hand", "left_hand"]
 
     if args.dataset == 'BNCI2014001':
         dataset = BNCI2014_001()
         ch=None
-        subjects = dataset.subject_list
+        events = ["right_hand", "left_hand"]
+
+    elif args.dataset == 'BNCI2015001':
+        dataset = BNCI2015_001()
+        ch=None
+        events = ["right_hand", "feet"]
+
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
-        ch = None
-        '''ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
-              "CP1", "CPz", "CP6", "CP4", "CP2"]'''
-    elif args.dataset == 'Lee2019_MI':
-        dataset = Lee2019_MI()
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
+        events = ["right_hand", "left_hand"]
+
     elif args.dataset == 'Schirrmeister2017':
         ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
               "CP1", "CPz", "CP6", "CP4", "CP2"]
@@ -78,14 +82,12 @@ def main(args):
         subjects = dataset.subject_list
         subjects.pop(0)
         dataset.subject_list = subjects
-    elif args.dataset == 'BNCI2015001':
-        dataset = BNCI2015_001()
-        ch = None
-        events = ["right_hand", "feet"]
+        events = ["right_hand", "left_hand"]
 
-    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch)
+    paradigm = MotorImagery_(events=events, n_classes=len(events), channels=ch, resample=250)
 
     datasets = [dataset]
+    events = ["left_hand", "right_hand"]
     n_classes = len(events)
 
     X, labels, meta = paradigm.get_data(dataset=dataset, subjects=[2])
@@ -100,7 +102,6 @@ def main(args):
     model = HybridModel(num_subjects - 1, args.model, n_chans, n_classes, input_window_samples, config=config,
                         freeze=args.freeze, args=args)
     # Send model to GPU
-
     if cuda:
         model.cuda()
     torchinfo.summary(model, input_size=(config.train.batch_size, X[0].shape[0] * (num_subjects - 1), X[0].shape[1]))
@@ -158,7 +159,8 @@ def main(args):
         mode=args.mode,
         remove_bn = args.remove_bn,
         criterion_type = args.criterion_type,
-        choose=True
+        choose=True,
+        dataset_code=args.dataset
     )
 
     print(f"(5) Before eval {(time() - init_time) * 1000}ms | {(time() - init_time)}s")
@@ -169,7 +171,7 @@ def main(args):
     # Save results
     print(run_dir)
     print(experiment_name)
-    results.to_csv(f"{run_dir}/{args.ea}_CenterLoss_bn_ChooseHead_{args.dataset}.csv")
+    results.to_csv(f"{run_dir}/{args.ea}_NormalHybrid_bn_ChooseHead_{args.dataset}.csv")
     
     print("---------------------------------------")
 

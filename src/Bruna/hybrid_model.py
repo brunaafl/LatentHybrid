@@ -12,7 +12,6 @@ from torch.nn.parameter import UninitializedParameter
 
 last_layer = {'EEGNet':19, 'EEGNeX':6, 'AttentionBaseNet':4}
 
-
 def gen_slice_model(model,n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn=False):
 
     last = last_layer[model]

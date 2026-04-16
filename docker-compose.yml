@@ -340,7 +340,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-weibo-loss:
-    profiles: ["loss-hybrid-fit", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["loss-hybrid-fit", "EA", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -463,7 +463,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-bnci2015-choose:
-    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-choose", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-choose", "shared-bnci2015", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -680,7 +680,7 @@ services:
 ###### WEIBO
 
   hybrid-noea-bn-weibo:
-    profiles: ["Hybrid-weibo", "weibo-fit", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-weibo-fit", "Hybrid-weibo", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -695,7 +695,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-weibo-inference:
-    profiles: [ "weibo-fit", "Hybrid-weibo", "inf-weibo", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [ "Hybrid-weibo", "Hybrid-weibo-inf", "inf-weibo", "Hybrid-BN", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -816,7 +816,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-bnci2015-choose:
-    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-choose", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-choose", "shared-bnci2015", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -844,7 +844,6 @@ services:
             - driver: nvidia
               device_ids: ['1']
               capabilities: [ gpu ]
-
 
 
   jupyter:
