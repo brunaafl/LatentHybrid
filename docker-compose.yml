@@ -340,7 +340,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-weibo-loss:
-    profiles: ["loss-hybrid-fit", "EA", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["loss-hybrid-fit", "weibo-loss", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -355,7 +355,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-weibo-loss-inf:
-    profiles: ["loss-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["loss-hybrid", "weibo-loss", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -385,7 +385,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-weibo-loss-choose:
-    profiles: ["loss-hybrid", "choose-hybrid-loss-wb", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["loss-hybrid", "weibo-loss", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -710,7 +710,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-weibo-loss:
-    profiles: ["loss-hybrid-fit", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["loss-hybrid-fit", "weibo-loss", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -725,7 +725,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-weibo-loss-inf:
-    profiles: ["loss-hybrid", "EA", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["loss-hybrid", "EA", "weibo-loss", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -755,7 +755,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-weibo-loss-choose:
-    profiles: ["loss-hybrid", "choose-hybrid-loss", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["loss-hybrid", "weibo-loss", "test-normal", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
