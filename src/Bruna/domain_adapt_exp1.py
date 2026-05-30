@@ -1,6 +1,7 @@
 import warnings
 
 import braindecode
+print(braindecode.__version__)
 import torch
 import moabb
 import random

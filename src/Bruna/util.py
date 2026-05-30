@@ -174,7 +174,7 @@ def parse_args():
         type=str,
         help="select model",
         default="EEGNet",
-        choices=["EEGNet", "EEGNeX", "EEGNeXShared", "EEGNetShared", "AttentionBaseNet", "AttentionBaseNetShared"],
+        choices=["EEGNet", "CTNet", "CTNetShared", "EEGNetShared", "AttentionBaseNet", "AttentionBaseNetShared"],
     )
 
     parser.add_argument(
