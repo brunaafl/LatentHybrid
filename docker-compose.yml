@@ -8,7 +8,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-freeze-bn-weibo
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -23,7 +23,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-freeze-bn-weibo
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -37,8 +37,8 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: shared-ea-bn
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    container_name: shared-ea-bnci
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -51,8 +51,8 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: shared-noea-bn
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    container_name: shared-noea-bnci
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -66,8 +66,8 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: shared-ea-bn
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    container_name: shared-ea-bncii
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -81,8 +81,8 @@ services:
     extends:
       file: base.yml
       service: base-experiment
-    container_name: shared-noea-bn
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    container_name: shared-noea-bncii
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -91,14 +91,13 @@ services:
               device_ids: [ '1' ]
               capabilities: [ gpu ]
 
-
   shared-ea-bn-robin:
     profiles: ["Shared", "shared-robin","shared-robin-ea"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-bn-robin
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -106,13 +105,14 @@ services:
             - driver: nvidia
               device_ids: ['1']
               capabilities: [ gpu ]
+
   shared-noea-bn-robin:
     profiles: [ "Shared"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-bn-robin
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model EEGNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -130,7 +130,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -140,12 +140,12 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-bnci-inference:
-    profiles: [ "EA", "Freeze", "bnci-test"]
+    profiles: [ "EA", "hybrid-bnci", "bnci-test"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -160,7 +160,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -175,7 +175,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-loss-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -185,12 +185,12 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-bnci-choose:
-    profiles: ["choose-hybrid-bnci", "TEST", "Freeze", "Hybrid-BN"]
+    profiles: ["choose-hybrid-bnci", "hybrid-bnci", "Freeze", "Hybrid-BN"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: hybrid-EA-bn-bnci-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -205,7 +205,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-freeze-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -222,7 +222,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-robin
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -237,7 +237,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-robin-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -252,7 +252,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-robin-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -267,7 +267,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-robin-loss-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -283,7 +283,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-EA-bn-robin-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -298,7 +298,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-robin-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -315,7 +315,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-weibo
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -330,7 +330,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-weibo-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -345,7 +345,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-weibo-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -360,7 +360,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-weibo-loss-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -375,7 +375,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-EA-bn-weibo-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -390,7 +390,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-weibo-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -405,7 +405,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-weibo-bn-loss-choose-inf
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -423,7 +423,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-bnci2015
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -438,7 +438,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-bnci2015-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -453,7 +453,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-bnci2015-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -468,7 +468,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bn-bnci2015-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -483,7 +483,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-ea-bnci2015-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -501,7 +501,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -511,12 +511,12 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-bnci-inference:
-    profiles: ["noEA", "Freeze", "Hybrid-BN", "bnci-test"]
+    profiles: ["noEA", "Freeze", "hybrid-bnci", "bnci-test"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -531,7 +531,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -546,7 +546,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-loss-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -556,12 +556,12 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-bnci-choose:
-    profiles: ["choose-hybrid", "choose-hybrid-bnci", "Freeze", "Hybrid-BN"]
+    profiles: ["choose-hybrid", "choose-hybrid-bnci", "hybrid-bnci", "Hybrid-BN"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-bnci-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -576,7 +576,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-freeze-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -593,7 +593,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-robin
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -608,7 +608,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-robin-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -623,7 +623,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-robin-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -638,7 +638,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-robin-loss-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -653,7 +653,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-robin-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -668,7 +668,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-robin-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -685,7 +685,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-weibo
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -700,7 +700,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-weibo-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -715,7 +715,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bnn-weibo-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -730,7 +730,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-weibo-loss-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -745,7 +745,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-weibo-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -760,7 +760,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-weibo-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -776,7 +776,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-bnci2015
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -791,7 +791,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-bnci2015-inf
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss --mode Inference"
     deploy:
       resources:
         reservations:
@@ -806,7 +806,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-bnci2015-loss
-    command: "python src/Bruna/domain_adapt_exp1.py --model EEGNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_exp1.py --model CTNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
@@ -821,7 +821,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bn-bnci2015-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -836,7 +836,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: hybrid-noea-bnci2015-bn-loss-choose
-    command: "python src/Bruna/domain_adapt_choosehead.py --model EEGNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
+    command: "python src/Bruna/domain_adapt_choosehead.py --model CTNet --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type AlignmentLoss"
     deploy:
       resources:
         reservations:
