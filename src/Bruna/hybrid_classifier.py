@@ -15,7 +15,7 @@ from hybrid_scoring import HybridScoring
 from alignment_loss import JointAlignmentLoss
 
 criterion_types = {'AlignmentLoss':JointAlignmentLoss, 'NLLLoss':NLLLoss, 'CrossEntropyLoss': CrossEntropyLoss}
-dataset_latent_dim = {'BNCI2014001': (16, 1, 251), 'Schirrmeister2017': (16, 1, 501), 'Weibo2014':(16, 1, 201)}
+dataset_latent_dim = {'BNCI2014001': (16, 1, 251), 'Schirrmeister2017': (16, 1, 501), 'Weibo2014':(16, 1, 251), 'BNCI2015001':(16,1,313)}
 
 # Class adapted to the normal Shared model for testing purposes
 class HybridClassifier(EEGClassifier):

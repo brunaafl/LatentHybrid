@@ -1,17 +1,18 @@
 import copy
+import math
+
 import braindecode
 import torch
 from torch import nn
 
-from braindecode.models import ShallowFBCSPNet, EEGNetv4, EEGNeX, AttentionBaseNet
+from braindecode.models import ShallowFBCSPNet, EEGNetv4, CTNet, AttentionBaseNet
 
 from torch.nn import init
 
 from torch.nn.modules.lazy import LazyModuleMixin
 from torch.nn.parameter import UninitializedParameter
 
-last_layer = {'EEGNet':19, 'EEGNeX':6, 'AttentionBaseNet':4}
-
+last_layer = {'EEGNet':19, 'CTNet':7, 'AttentionBaseNet':4}
 
 def gen_slice_model(model,n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn=False):
 
@@ -121,22 +122,46 @@ def gen_slice_ABN(n_chans, n_classes, input_window_samples, config, start=0, end
     return nn.Sequential(*net)
 
 
-def gen_slice_EEGNeX(n_chans, n_classes, input_window_samples, config, start=0, end=6, remove_bn=False):
+class CTNetEncoder(nn.Module):
+    def __init__(self, original_model):
+        super().__init__()
+        self.ensuredim = original_model.ensuredim
+        self.cnn = original_model.cnn
+        self.position = original_model.position
+        self.trans = original_model.trans
+        self.emb_size = original_model.emb_size
 
-    if start == 0 and end < 6:
-        drop_prob = 0.5
-    else:
-        drop_prob = 0.5 * 0.9
+    def forward(self, x):
+        x = self.ensuredim(x)
+        cnn_out = self.cnn(x)
+        cnn_out_scaled = cnn_out * math.sqrt(self.emb_size)
+        pos_out = self.position(cnn_out_scaled)
+        trans_out = self.trans(pos_out)
+        features = cnn_out_scaled + trans_out
+        return features
 
-    temp_model = EEGNeX(
+class CTNetClassif(nn.Module):
+    def __init__(self, original_model):
+        super().__init__()
+        self.flatten = original_model.flatten
+        self.final_layer = original_model.final_layer
+
+    def forward(self, x):
+        x = self.flatten(x)
+        out = self.final_layer(x)
+        return out
+
+def gen_slice_CTNet(n_chans, n_classes, input_window_samples, config, start=0, end=7, remove_bn=False):
+
+    temp_model = CTNet(
         n_chans=n_chans,
         n_outputs=n_classes,
         n_times=input_window_samples,
-        drop_prob=drop_prob
+        heads=1,
+        #drop_prob_posi=0.2
     )
 
-    if end == 6 and start == 0:
-
+    if end == 7 and start == 0:
         if remove_bn == 'LEA':
             for i, module in enumerate(temp_model):
                 if isinstance(temp_model[i], nn.BatchNorm2d):
@@ -145,36 +170,18 @@ def gen_slice_EEGNeX(n_chans, n_classes, input_window_samples, config, start=0, 
             for i, module in enumerate(temp_model):
                 if isinstance(temp_model[i], nn.BatchNorm2d):
                     temp_model[i] = nn.Identity()
-
         return temp_model
 
     if start==0 and end == 0:
         return nn.Identity()
 
-    net = list(temp_model.children())[start:end]
-    if remove_bn == 'True':
-        for i, module in enumerate(net):
-            if isinstance(net[i], nn.BatchNorm2d):
-                net[i] = nn.Identity()
-    elif remove_bn == 'LEA':
-        for i, module in enumerate(net):
-            if isinstance(net[i], nn.BatchNorm2d):
-                net[i] = LatentEuclideanAlignment()
-    elif remove_bn == 'One-bn':
-        for i, module in enumerate(net):
-            if isinstance(net[i], nn.BatchNorm2d):
-                if i == len(net) - 1 and start == 0:
-                    net[i] = net[i]
-                else:
-                    net[i] = nn.Identity()
-    elif remove_bn == 'One-LEA':
-        for i, module in enumerate(net):
-            if isinstance(net[i], nn.BatchNorm2d):
-                if i == len(net) - 1 and start == 0:
-                    net[i] = LatentEuclideanAlignment()
-                else:
-                    net[i] = nn.Identity()
-    return nn.Sequential(*net)
+    if end<7:
+        encoder = CTNetEncoder(temp_model)
+        return encoder
+    if start>0:
+        clf = CTNetClassif(temp_model)
+        return clf
+    return None
 
 def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, end=19, remove_bn='False', ):
     # Maybe? Does it make any sense?
@@ -239,7 +246,7 @@ def gen_slice_EEGNet(n_chans, n_classes, input_window_samples, config, start=0, 
 
 model_gen = {
     "EEGNet": [gen_slice_EEGNet, 12, 12],
-    "EEGNeX": [gen_slice_EEGNet, 5, 5],
+    "CTNet": [gen_slice_CTNet, 5, 5],
     "AttentionBaseNet": [gen_slice_ABN, 3, 3],
     "EEGNetShared": [gen_slice_EEGNet, 0, 0],
 }

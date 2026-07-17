@@ -35,7 +35,7 @@ class HybridScoring(EpochScoring):
             dataset_train,
             dataset_valid,
             **kwargs):
-        X_test, y_test, y_pred = self.get_test_data(dataset_train, dataset_valid, self.use_caching)
+        X_test, y_test, y_pred = self.get_test_data(dataset_train, dataset_valid)
         unwrapped_y_pred = []
 
         for subject_i in range(net.module.num_models):

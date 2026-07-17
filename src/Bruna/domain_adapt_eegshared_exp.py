@@ -63,7 +63,8 @@ def main(args):
         subjects = dataset.subject_list
     elif args.dataset == 'Weibo2014':
         dataset = Weibo2014()
-        ch = None
+        ch = ["FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "CP5", "CP3",
+              "CP1", "CPz", "CP6", "CP4", "CP2"]
     elif args.dataset == 'BNCI2015001':
         dataset = BNCI2015_001()
         ch = None

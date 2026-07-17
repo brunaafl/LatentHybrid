@@ -49,7 +49,7 @@ class _BaseHybridEvaluation(BaseEvaluation):
 
     def __init__(self, *args, run_dir=None, eval_config=None, EA_in_eval=False, len_run=None,
                  mode='Fit', wandb_params=None, remove_bn='False', seed=0, criterion_type=None,
-                 online="off", cross_session = False, choose = False, **kwargs):
+                 online="off", cross_session = False, choose = False, dataset_code="BNCI2014001",**kwargs):
 
         add_cols = ["head"]
         if choose:
@@ -67,6 +67,7 @@ class _BaseHybridEvaluation(BaseEvaluation):
         self.seed = seed
         self.online = online
         self.cross_session = cross_session
+        self.dataset_code = dataset_code
 
     def is_valid(self, dataset):
         return len(dataset.subject_list) > 1
@@ -133,7 +134,7 @@ class _BaseHybridEvaluation(BaseEvaluation):
         eval_model.num_models = 1
 
         # Define classifier
-        eval_classifier = define_hybrid_clf(eval_model, self.eval_config, experiment_name='Evaluation', criterion_type=self.criterion_type, )
+        eval_classifier = define_hybrid_clf(eval_model, self.eval_config, experiment_name='Evaluation', criterion_type=self.criterion_type, dataset=self.dataset_code )
         print('EA in eval? ', self.EA_in_eval)
 
         # Create dataset transforms
