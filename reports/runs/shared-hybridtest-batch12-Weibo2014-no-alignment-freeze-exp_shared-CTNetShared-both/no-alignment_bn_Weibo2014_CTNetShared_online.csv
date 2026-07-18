@@ -1,0 +1,11 @@
+,score,time,samples,subject,session,channels,n_sessions,dataset,pipeline
+0,0.6166667,271.9677,1420.0,1,both,21,1,Weibo2014,EEGNetv4_Without_EA
+1,0.73333335,321.28055,1420.0,2,both,21,1,Weibo2014,EEGNetv4_Without_EA
+2,0.55833334,320.83624,1420.0,3,both,21,1,Weibo2014,EEGNetv4_Without_EA
+3,0.51666665,314.38675,1420.0,4,both,21,1,Weibo2014,EEGNetv4_Without_EA
+4,0.4,272.84232,1420.0,5,both,21,1,Weibo2014,EEGNetv4_Without_EA
+5,0.63,288.87878,1440.0,6,both,21,1,Weibo2014,EEGNetv4_Without_EA
+6,0.80833334,324.09854,1420.0,7,both,21,1,Weibo2014,EEGNetv4_Without_EA
+7,0.64166665,284.65875,1420.0,8,both,21,1,Weibo2014,EEGNetv4_Without_EA
+8,0.675,334.11963,1420.0,9,both,21,1,Weibo2014,EEGNetv4_Without_EA
+9,0.49166667,296.7866,1420.0,10,both,21,1,Weibo2014,EEGNetv4_Without_EA

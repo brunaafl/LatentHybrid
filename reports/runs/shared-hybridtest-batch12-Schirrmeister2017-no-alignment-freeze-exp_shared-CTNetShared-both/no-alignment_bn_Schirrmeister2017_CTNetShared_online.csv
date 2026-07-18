@@ -1,0 +1,14 @@
+,score,time,samples,subject,session,channels,n_sessions,dataset,pipeline
+0,0.8333333,210.72496,4896.0,2,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+1,0.7583333,145.0805,4896.0,3,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+2,0.90833336,143.96799,4896.0,4,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+3,0.6805556,143.83348,4896.0,5,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+4,0.57222223,133.21143,4896.0,6,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+5,0.61944443,138.2788,4896.0,7,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+6,0.5,73.83447,4896.0,8,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+7,0.5277778,115.468254,4896.0,9,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+8,0.78333336,98.09012,4896.0,10,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+9,0.50555557,153.59123,4896.0,11,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+10,0.875,126.09649,4896.0,12,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+11,0.60555553,183.30914,4896.0,13,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
+12,0.6611111,104.898346,4896.0,14,both,21,1,Schirrmeister2017,EEGNetv4_Without_EA
