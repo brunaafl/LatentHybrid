@@ -3,10 +3,10 @@ train:
     num_workers: 10
     run_report: '/workspace/outputs/'
     n_epochs: 500 #500
-    patience: 150
+    patience: 50
     weight_decay: 0.0005
     batch_size: 64
-    lr: 0.0005
+    lr: 0.0005 #0.0005
     len_run: 20
     valid_split: 0.2
     experiment_name: 'shared-hybridtest-batch12'

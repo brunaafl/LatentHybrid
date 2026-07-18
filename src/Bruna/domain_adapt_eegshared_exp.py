@@ -92,7 +92,7 @@ def main(args):
     input_window_samples = X.shape[2]
     len_run = config.train.len_run if args.ea else None
 
-    model = init_model(n_chans, n_classes, input_window_samples, config=config)
+    model = init_model(n_chans, n_classes, input_window_samples, config, args)
 
     # Send model to GPU
     if cuda:
@@ -136,7 +136,7 @@ def main(args):
     print(results.head())
 
     # Save results
-    results.to_csv(f"{run_dir}/{args.ea}_EEGNetShared_bn_{args.dataset}_{args.model}_online.csv")
+    results.to_csv(f"{run_dir}/{args.ea}_bn_{args.dataset}_{args.model}_online.csv")
 
     print("---------------------------------------")
 

@@ -3,12 +3,12 @@ services:
 ###### SHARED BASELINE ######
 
   shared-ea-bn-weibo:
-    profiles: [ "Shared", "weibo", "shared-weibo" ]
+    profiles: [ "Shared", "shared-attbn", "shared-weibo" ]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-freeze-bn-weibo
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config_weibo.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -18,12 +18,12 @@ services:
               capabilities: [ gpu ]
 
   shared-noea-bn-weibo:
-    profiles: [ "Shared", "weibo", "shared-weibo" ]
+    profiles: [ "Shared", "shared-attbn", "shared-weibo" ]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-freeze-bn-weibo
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config_weibo.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Weibo2014 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -38,7 +38,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-bnci
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -52,7 +52,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-bnci
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2014001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -62,12 +62,12 @@ services:
               capabilities: [ gpu ]
 
   shared-ea-bn-bnci2015:
-    profiles: ["shared-bnci2015","Shared", "bnci"]
+    profiles: ["shared-bnci2015","shared-attbn", "bnci"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-bncii
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config_bnci2015.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -77,12 +77,12 @@ services:
               capabilities: [ gpu ]
 
   shared-noea-bn-bnci2015:
-    profiles: ["shared-bnci2015", "Shared", "bnci"]
+    profiles: ["shared-bnci2015", "shared-attbn", "bnci"]
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-bncii
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config_bnci2015.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset BNCI2015001 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -97,7 +97,7 @@ services:
       file: base.yml
       service: base-experiment
     container_name: shared-ea-bn-robin
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config.yaml --ea alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -107,12 +107,12 @@ services:
               capabilities: [ gpu ]
 
   shared-noea-bn-robin:
-    profiles: [ "Shared"]
+    profiles: [ "Shared", 'shared-robin']
     extends:
       file: base.yml
       service: base-experiment
     container_name: shared-noea-bn-robin
-    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model CTNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
+    command: "python src/Bruna/domain_adapt_eegshared_exp.py --model AttentionBaseNetShared --config config/config.yaml --ea no-alignment --freeze freeze --num_exp exp_shared --dataset Schirrmeister2017 --remove_bn False --criterion_type CrossEntropyLoss"
     deploy:
       resources:
         reservations:
@@ -125,7 +125,7 @@ services:
 
 ### BNCI
   hybrid-ea-bn-bnci:
-    profiles: ["hybrid-bnci", "EA", "Freeze", "Hybrid-BN", "bnci-test"]
+    profiles: ["hybrid-bnci", "hybrid-bnci--ea", "Freeze", "Hybrid-BN", "bnci-test"]
     extends:
       file: base.yml
       service: base-experiment
@@ -140,7 +140,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-bnci-inference:
-    profiles: [ "EA", "hybrid-bnci", "bnci-test"]
+    profiles: [ "EA", "hybrid-bnci--ea"]
     extends:
       file: base.yml
       service: base-experiment
@@ -185,7 +185,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-bnci-choose:
-    profiles: ["choose-hybrid-bnci", "hybrid-bnci", "Freeze", "Hybrid-BN"]
+    profiles: ["choose-hybrid-bnci", "hybrid-bnci", "hybrid-bnci--ea", "Hybrid-BN"]
     extends:
       file: base.yml
       service: base-experiment
@@ -217,7 +217,7 @@ services:
 #### ROBIN
 
   hybrid-ea-bn-robin:
-    profiles: ["Hybrid-robin", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-robin", "Freeze",  "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -232,7 +232,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-robin-inferece:
-    profiles: [ "Hybrid-robin", "shared-robin", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [ "Hybrid-robin", "shared-robin", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -278,7 +278,7 @@ services:
 
 
   hybrid-ea-bn-robin-choose:
-    profiles: ["choose-hybrid", "shared-robin-ea", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["choose-hybrid", "shared-robin-ea", "Freeze", "hybrid-bnci-ea", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -310,7 +310,7 @@ services:
 ###### WEIBO
 
   hybrid-ea-bn-weibo:
-    profiles: ["Hybrid-weibo", "weibo-fit", "inf-hybrid", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-weibo", "weibo-fit", "inf-hybrid", "hybrid-bnci-ea", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -325,7 +325,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-weibo-inference:
-    profiles: ["Hybrid-weibo", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-weibo-fit", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -370,7 +370,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-weibo-choose:
-    profiles: ["Hybrid-weibo", "Hybrid-weibo-choose", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-weibo", "Hybrid-weibo-fit", "Freeze", "hybrid-bnci-ea", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -418,7 +418,7 @@ services:
 ###### bnci2015
 
   hybrid-ea-bn-bnci2015:
-    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-ea", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-ea", "Freeze", "hybrid-bnci-ea", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -433,7 +433,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-bnci2015-inference:
-    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-ea", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-ea", "Freeze", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -463,7 +463,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-ea-bn-bnci2015-choose:
-    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-choose", "shared-bnci2015", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-choose", "hybrid-bnci-ea", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -511,7 +511,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-bnci-inference:
-    profiles: ["noEA", "Freeze", "hybrid-bnci", "bnci-test"]
+    profiles: ["noEA", "Freeze", "hybrid-bnci-noea", "bnci-test"]
     extends:
       file: base.yml
       service: base-experiment
@@ -556,7 +556,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-bnci-choose:
-    profiles: ["choose-hybrid", "choose-hybrid-bnci", "hybrid-bnci", "Hybrid-BN"]
+    profiles: ["hybrid-bnci", "hybrid-bnci-noea", "hybrid-bnci", "Hybrid-BN"]
     extends:
       file: base.yml
       service: base-experiment
@@ -588,7 +588,7 @@ services:
 #### ROBIN
 
   hybrid-noea-bn-robin:
-    profiles: ["Hybrid-robin", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-robin", "EA", "hybrid-bnci-noea", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -603,7 +603,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-robin-inference:
-    profiles: [  "Hybrid-robin", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [  "Hybrid-robin", "hybrid-bnci-noea", "Hybrid-BN", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -648,7 +648,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-robin-choose:
-    profiles: ["choose-hybrid", "shared-robin", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["choose-hybrid", "hybrid-bnci-noea", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -680,7 +680,7 @@ services:
 ###### WEIBO
 
   hybrid-noea-bn-weibo:
-    profiles: ["Hybrid-weibo-fit", "Hybrid-weibo", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-weibo", "hybrid-bnci-noea", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -695,7 +695,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-weibo-inference:
-    profiles: [ "Hybrid-weibo", "Hybrid-weibo-inf", "inf-weibo", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [  "hybrid-bnci-noea", "inf-weibo", "Hybrid-BN", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -740,7 +740,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-weibo-choose:
-    profiles: ["Hybrid-weibo", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-weibo", "hybrid-bnci-noea", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -771,7 +771,7 @@ services:
 
 ######## bnci2015
   hybrid-noea-bn-bnci2015:
-    profiles: ["Hybrid-bnci2015", "bnci2015", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-bnci2015", "hybrid-bnci-noea", "Freeze", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
@@ -786,7 +786,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-bnci2015-inference:
-    profiles: [ "Hybrid-bnci2015", "EA", "Freeze", "Hybrid-BN", "Hybrid-BN-EA" ]
+    profiles: [ "Hybrid-bnci2015", "EA", "hybrid-bnci-noea", "Hybrid-BN", "Hybrid-BN-EA" ]
     extends:
       file: base.yml
       service: base-experiment
@@ -816,7 +816,7 @@ services:
               capabilities: [ gpu ]
 
   hybrid-noea-bn-bnci2015-choose:
-    profiles: ["Hybrid-bnci2015", "Hybrid-bnci2015-choose", "shared-bnci2015", "Hybrid-BN", "Hybrid-BN-EA"]
+    profiles: ["Hybrid-bnci2015", "hybrid-bnci-noea", "shared-bnci2015", "Hybrid-BN", "Hybrid-BN-EA"]
     extends:
       file: base.yml
       service: base-experiment
