@@ -4,7 +4,7 @@ import torch
 
 from braindecode import EEGClassifier
 from braindecode.datasets import BaseConcatDataset
-from braindecode.models import EEGNetv4
+from braindecode.models import EEGNetv4, AttentionBaseNet, CTNet
 from sklearn.base import clone
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import LeaveOneOut
@@ -148,14 +148,30 @@ def define_clf_hybrid(model, config, warm_start=True, experiment_name=None):
     return clf
 
 
-def init_model(n_chans, n_classes, input_window_samples, config):
-    model = EEGNetv4(
-        n_chans=n_chans,
-        n_outputs=n_classes,
-        n_times=input_window_samples,
-        final_conv_length=config.model.final_conv_length,
-        drop_prob=config.model.drop_prob
-    )
+def init_model(n_chans, n_classes, input_window_samples, config, args):
+
+    if args.model == 'EEGNetShared':
+        model = EEGNetv4(
+            n_chans=n_chans,
+            n_outputs=n_classes,
+            n_times=input_window_samples,
+            final_conv_length=config.model.final_conv_length,
+            drop_prob=config.model.drop_prob
+        )
+    elif args.model == 'AttentionBaseNetShared':
+        model = AttentionBaseNet(
+            n_chans=n_chans,
+            n_outputs=n_classes,
+            n_times=input_window_samples,
+        )
+
+    elif args.model== 'CTNetShared':
+        model = CTNet(
+            n_chans=n_chans,
+            n_outputs=n_classes,
+            n_times=input_window_samples,
+            heads=1,
+        )
     return model
 
 
